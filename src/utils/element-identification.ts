@@ -14,7 +14,7 @@ export function getElementPath(target: HTMLElement, maxDepth = 4): string {
     } else if (current.className && typeof current.className === 'string') {
       const meaningfulClass = current.className
         .split(/\s+/)
-        .find((c) => c.length > 2 && !c.match(/^[a-z]{1,2}$/) && !c.match(/[A-Z0-9]{5,}/))
+        .find((c: string) => c.length > 2 && !c.match(/^[a-z]{1,2}$/) && !c.match(/[A-Z0-9]{5,}/))
       if (meaningfulClass) {
         identifier = `.${meaningfulClass.split('_')[0]}`
       }
@@ -160,6 +160,6 @@ export function getElementClasses(element: HTMLElement): string {
   if (!element.className || typeof element.className !== 'string') return ''
   return element.className
     .split(/\s+/)
-    .filter((c) => c.length > 0)
+    .filter((c: string) => c.length > 0)
     .join(' ')
 }
