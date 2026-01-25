@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import styles from './toolbar.module.scss'
 import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup'
 import { identifyElement, getNearbyText, getElementClasses } from '../../utils/element-identification'
+import { useLayoutShiftDetection, type ClsRating } from '../../hooks/use-layout-shift-detection'
 import type { Annotation } from '@toolbar/types'
 
 let hasPlayedEntranceAnimation = false
@@ -65,9 +66,19 @@ export default function Toolbar() {
     toolbarX: number
     toolbarY: number
   } | null>(null)
+  const [clsDetectionActive, setClsDetectionActive] = useState(false)
+  const [clsFilterThreshold, setClsFilterThreshold] = useState(0.01)
+  const [hoveredShiftId, setHoveredShiftId] = useState<string | null>(null)
   const didDragRef = useRef(false)
   const popupRef = useRef<AnnotationPopupHandle>(null)
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const { shifts, cumulativeCls, clsRating, clearShifts, replayShift, isSupported: clsSupported } = useLayoutShiftDetection({
+    enabled: clsDetectionActive,
+    filterThreshold: clsFilterThreshold,
+  })
+
+  const filteredShifts = shifts.filter((shift) => shift.value >= clsFilterThreshold)
 
   useEffect(() => {
     if (!hasPlayedEntranceAnimation) {
@@ -378,6 +389,28 @@ export default function Toolbar() {
     setAnimationsPaused(!animationsPaused)
   }
 
+  const handleClsButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setClsDetectionActive(!clsDetectionActive)
+  }
+
+  const getClsRatingClass = (rating: ClsRating): string => {
+    switch (rating) {
+      case 'good':
+        return styles.good
+      case 'needs-improvement':
+        return styles.needsImprovement
+      case 'poor':
+        return styles.poor
+    }
+  }
+
+  const formatTime = (timestamp: number): string => {
+    const seconds = Math.floor(timestamp / 1000)
+    const ms = Math.floor(timestamp % 1000)
+    return `${seconds}.${ms.toString().padStart(3, '0')}s`
+  }
+
   useEffect(() => {
     if (!animationsPaused) return
 
@@ -503,11 +536,146 @@ export default function Toolbar() {
             isExiting={pendingExiting}
             style={{
               left: `${pendingAnnotation.x}%`,
-              top: pendingAnnotation.clientY > window.innerHeight / 2 
-                ? pendingAnnotation.clientY - 200 
+              top: pendingAnnotation.clientY > window.innerHeight / 2
+                ? pendingAnnotation.clientY - 200
                 : pendingAnnotation.clientY + 30,
             }}
           />,
+          document.body
+        )}
+
+      {clsDetectionActive && isActive &&
+        createPortal(
+          <div
+            className={styles.shiftPanel}
+            style={{
+              position: 'fixed',
+              bottom: toolbarPosition ? `calc(100vh - ${toolbarPosition.y}px + 14px)` : 'calc(1.25rem + 44px + 14px)',
+              right: toolbarPosition ? `calc(100vw - ${toolbarPosition.x}px - 257px)` : '1.25rem',
+            }}
+          >
+            <div className={styles.shiftPanelHeader}>
+              <span className={styles.shiftPanelTitle}>Layout Shifts</span>
+              <span className={`${styles.shiftPanelScore} ${getClsRatingClass(clsRating)}`}>
+                CLS: {cumulativeCls.toFixed(3)}
+              </span>
+            </div>
+            <div className={styles.shiftPanelControls}>
+              <select
+                className={styles.shiftFilterSelect}
+                value={clsFilterThreshold}
+                onChange={(e) => setClsFilterThreshold(Number(e.target.value))}
+              >
+                <option value={0.001}>Show all shifts</option>
+                <option value={0.01}>Minor+ (&gt; 0.01)</option>
+                <option value={0.1}>Moderate+ (&gt; 0.1)</option>
+                <option value={0.25}>Severe (&gt; 0.25)</option>
+              </select>
+              <button
+                type="button"
+                className={styles.shiftClearButton}
+                onClick={clearShifts}
+                disabled={shifts.length === 0}
+              >
+                Clear
+              </button>
+            </div>
+            <div className={styles.shiftList}>
+              {filteredShifts.length === 0 ? (
+                <div className={styles.shiftListEmpty}>
+                  {shifts.length === 0 ? 'No layout shifts detected yet' : 'No shifts match the current filter'}
+                </div>
+              ) : (
+                filteredShifts.map((shift) => (
+                  <div
+                    key={shift.id}
+                    className={styles.shiftItem}
+                    onClick={() => replayShift(shift)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        replayShift(shift)
+                      }
+                    }}
+                    onMouseEnter={() => setHoveredShiftId(shift.id)}
+                    onMouseLeave={() => setHoveredShiftId(null)}
+                    onFocus={() => setHoveredShiftId(shift.id)}
+                    onBlur={() => setHoveredShiftId(null)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <span className={styles.shiftItemValue}>{shift.value.toFixed(3)}</span>
+                    <div className={styles.shiftItemContent}>
+                      <div className={styles.shiftItemDescription}>{shift.description}</div>
+                      <div className={styles.shiftItemTime}>{formatTime(shift.timestamp)}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.shiftItemReplay}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        replayShift(shift)
+                      }}
+                      aria-label="Replay shift"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none">
+                        <path d="M4 4L12 10L4 16V4Z" fill="currentColor" />
+                      </svg>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {hoveredShiftId &&
+        createPortal(
+          <div className={styles.shiftOverlay}>
+            {filteredShifts
+              .filter((shift) => shift.id === hoveredShiftId)
+              .map((shift) => {
+                // Convert from viewport coords at capture time to current viewport coords
+                const scrollOffset = shift.scrollY - scrollY
+                return shift.sources.map((source, idx) => {
+                  // Try to get current rect from the actual element if it still exists
+                  let currentRect = source.currentRect
+                  if (source.node && document.contains(source.node)) {
+                    const liveRect = source.node.getBoundingClientRect()
+                    currentRect = {
+                      x: liveRect.x,
+                      y: liveRect.y,
+                      width: liveRect.width,
+                      height: liveRect.height,
+                    }
+                  }
+
+                  return (
+                    <div key={`${shift.id}-${idx}`}>
+                      <div
+                        className={styles.shiftPreviousRect}
+                        style={{
+                          left: source.previousRect.x,
+                          top: source.previousRect.y + scrollOffset,
+                          width: source.previousRect.width,
+                          height: source.previousRect.height,
+                        }}
+                      />
+                      <div
+                        className={`${styles.shiftHighlight} ${styles.enter}`}
+                        style={{
+                          left: currentRect.x,
+                          top: source.node && document.contains(source.node) ? currentRect.y : currentRect.y + scrollOffset,
+                          width: currentRect.width,
+                          height: currentRect.height,
+                        }}
+                      />
+                    </div>
+                  )
+                })
+              })}
+          </div>,
           document.body
         )}
 
@@ -630,6 +798,27 @@ export default function Toolbar() {
                 </svg>
               </button>
               <div className={styles.buttonTooltip}>{animationsPaused ? 'Resume Animations' : 'Pause Animations'}</div>
+            </div>
+
+            <div className={styles.buttonWrapper}>
+              <button
+                type="button"
+                className={styles.controlButton}
+                onClick={handleClsButtonClick}
+                data-active={clsDetectionActive}
+                disabled={!clsSupported}
+                aria-label={clsDetectionActive ? 'Stop detecting layout shifts' : 'Detect layout shifts'}
+                aria-pressed={clsDetectionActive}
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <rect x="3" y="4" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                  <rect x="11" y="11" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                  <path d="M6 9L6 13L11 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2" />
+                </svg>
+              </button>
+              <div className={styles.buttonTooltip}>
+                {!clsSupported ? 'CLS (Chrome only)' : 'Layout Shifts'}
+              </div>
             </div>
 
             <div className={styles.buttonWrapper}>

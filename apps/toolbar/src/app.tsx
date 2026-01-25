@@ -1,6 +1,11 @@
+import { useState } from 'react'
 import Toolbar from './components/toolbar'
 
 function App() {
+  const [showBanner, setShowBanner] = useState(false)
+  const [boxWidth, setBoxWidth] = useState(100)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [listItems, setListItems] = useState(['Item 1', 'Item 2', 'Item 3'])
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <header>
@@ -157,6 +162,188 @@ function App() {
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
           >
             Secondary Action
+          </button>
+        </div>
+      </section>
+
+      <section style={{ marginTop: '3rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Layout Shift Testing</h2>
+        <p style={{ opacity: 0.8, marginBottom: '1.5rem' }}>
+          Click the layout shift button (rectangles icon) in the toolbar, then use these controls to trigger layout shifts.
+          You&apos;ll see the shifts detected and can replay them.
+        </p>
+
+        {showBanner && (
+          <div style={{
+            background: 'linear-gradient(135deg, #ff6b6b, #ff8e53)',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            marginBottom: '1rem',
+            color: 'white',
+            fontWeight: 500,
+          }}>
+            This banner just appeared and pushed content down!
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+          <button
+            type="button"
+            onClick={() => {
+              // Delayed to avoid hadRecentInput filter
+              setTimeout(() => setShowBanner((b) => !b), 600)
+            }}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#ff6b6b',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 500,
+            }}
+          >
+            {showBanner ? 'Hide Banner' : 'Inject Banner (Delayed Shift)'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTimeout(() => setBoxWidth((w) => w === 100 ? 200 : 100), 600)
+            }}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#4ecdc4',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 500,
+            }}
+          >
+            Resize Box (Delayed)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTimeout(() => setImageLoaded((i) => !i), 600)
+            }}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#a855f7',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 500,
+            }}
+          >
+            {imageLoaded ? 'Remove Image' : 'Load Image (Delayed)'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTimeout(() => {
+                setListItems((items) => [
+                  `New Item ${items.length + 1}`,
+                  ...items,
+                ])
+              }, 600)
+            }}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#f59e0b',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 500,
+            }}
+          >
+            Add List Item (Delayed)
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Resizable Box</h3>
+            <div style={{
+              width: boxWidth,
+              height: 60,
+              background: 'linear-gradient(135deg, #4ecdc4, #44a08d)',
+              borderRadius: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 500,
+              transition: 'none', // No transition so it causes a shift
+            }}>
+              {boxWidth}px
+            </div>
+          </div>
+
+          {imageLoaded && (
+            <div>
+              <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Dynamic Image</h3>
+              <div style={{
+                width: 150,
+                height: 100,
+                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                borderRadius: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 500,
+              }}>
+                Image Placeholder
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Dynamic List</h3>
+            <ul style={{
+              background: 'rgba(255,255,255,0.05)',
+              padding: '0.5rem 1rem 0.5rem 2rem',
+              borderRadius: '0.5rem',
+              margin: 0,
+              minWidth: 150,
+            }}>
+              {listItems.map((item, i) => (
+                <li key={`${item}-${i}`} style={{ padding: '0.25rem 0' }}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowBanner(false)
+              setBoxWidth(100)
+              setImageLoaded(false)
+              setListItems(['Item 1', 'Item 2', 'Item 3'])
+            }}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.7)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+            }}
+          >
+            Reset All
           </button>
         </div>
       </section>
