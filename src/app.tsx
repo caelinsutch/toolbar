@@ -1,4 +1,4 @@
-import Toolbar from './components/Toolbar'
+import Toolbar from './components/toolbar'
 
 function App() {
   return (
@@ -33,6 +33,86 @@ function App() {
           <li>Hover over buttons to see tooltips</li>
           <li>Click the close button (X) to collapse it</li>
         </ol>
+      </section>
+
+      <section style={{ marginTop: '3rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Animation Examples</h2>
+        <p style={{ opacity: 0.8, marginBottom: '1.5rem' }}>
+          Use the pause button (⏸) in the toolbar to stop all animations on the page.
+        </p>
+        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              border: '3px solid rgba(255,255,255,0.2)',
+              borderTopColor: '#3c82f7',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 0.5rem',
+            }} />
+            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Spinner</span>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: 16,
+              height: 16,
+              background: '#34c759',
+              borderRadius: '50%',
+              animation: 'pulse 2s ease-in-out infinite',
+              margin: '12px auto 12px',
+            }} />
+            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Pulse</span>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: 20,
+              height: 20,
+              background: '#ff9500',
+              borderRadius: 4,
+              animation: 'bounce 1s ease-in-out infinite',
+              margin: '0 auto 0.5rem',
+            }} />
+            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Bounce</span>
+          </div>
+          <div style={{ textAlign: 'center', minWidth: 120 }}>
+            <div style={{
+              width: 120,
+              height: 6,
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: 3,
+              overflow: 'hidden',
+              margin: '17px auto 17px',
+            }}>
+              <div style={{
+                width: '30%',
+                height: '100%',
+                background: '#af52de',
+                borderRadius: 3,
+                animation: 'progress 2s ease-in-out infinite',
+              }} />
+            </div>
+            <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Progress</span>
+          </div>
+        </div>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+          }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+          }
+          @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 100%; }
+            100% { width: 0%; }
+          }
+        `}</style>
       </section>
 
       <section style={{ marginTop: '3rem' }}>
