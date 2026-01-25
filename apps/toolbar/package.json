@@ -1,0 +1,30 @@
+{
+  "name": "@toolbar/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@toolbar/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@toolbar/tsconfig": "workspace:*",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "sass": "^1.97.3",
+    "typescript": "^5",
+    "vite": "^7.3.1"
+  }
+}

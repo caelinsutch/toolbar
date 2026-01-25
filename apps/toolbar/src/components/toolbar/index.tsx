@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import styles from './toolbar.module.scss'
 import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup'
 import { identifyElement, getNearbyText, getElementClasses } from '../../utils/element-identification'
-import type { Annotation } from '../../types'
+import type { Annotation } from '@toolbar/types'
 
 let hasPlayedEntranceAnimation = false
 
