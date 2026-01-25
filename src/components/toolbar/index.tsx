@@ -65,8 +65,7 @@ export default function Toolbar() {
     toolbarX: number
     toolbarY: number
   } | null>(null)
-  const [dragRotation, setDragRotation] = useState(0)
-  const justFinishedDragRef = useRef(false)
+  const didDragRef = useRef(false)
   const popupRef = useRef<AnnotationPopupHandle>(null)
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -304,8 +303,7 @@ export default function Toolbar() {
       const rect = toolbarParent.getBoundingClientRect()
       const currentX = toolbarPosition?.x ?? rect.left
       const currentY = toolbarPosition?.y ?? rect.top
-      const randomRotation = (Math.random() - 0.5) * 10
-      setDragRotation(randomRotation)
+      didDragRef.current = false
       setDragStartPos({
         x: e.clientX,
         y: e.clientY,
@@ -318,16 +316,19 @@ export default function Toolbar() {
 
   useEffect(() => {
     if (!dragStartPos) return
-    const DRAG_THRESHOLD = 5
+    const DRAG_THRESHOLD = 10
 
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - dragStartPos.x
       const deltaY = e.clientY - dragStartPos.y
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-      if (!isDragging && distance > DRAG_THRESHOLD) {
-        setIsDragging(true)
-      }
-      if (isDragging || distance > DRAG_THRESHOLD) {
+
+      if (distance > DRAG_THRESHOLD) {
+        if (!isDragging) {
+          setIsDragging(true)
+        }
+        didDragRef.current = true
+
         let newX = dragStartPos.toolbarX + deltaX
         let newY = dragStartPos.toolbarY + deltaY
         const padding = 20
@@ -348,12 +349,6 @@ export default function Toolbar() {
     }
 
     const handleMouseUp = () => {
-      if (isDragging) {
-        justFinishedDragRef.current = true
-        setTimeout(() => {
-          justFinishedDragRef.current = false
-        }, 50)
-      }
       setIsDragging(false)
       setDragStartPos(null)
     }
@@ -367,7 +362,7 @@ export default function Toolbar() {
   }, [dragStartPos, isDragging, isActive])
 
   const handleToggle = () => {
-    if (justFinishedDragRef.current) return
+    if (didDragRef.current) return
     setIsActive(!isActive)
   }
 
@@ -540,7 +535,6 @@ export default function Toolbar() {
           className={`${styles.toolbarContainer} ${isActive ? styles.expanded : styles.collapsed} ${
             showEntranceAnimation ? styles.entrance : ''
           } ${isDragging ? styles.dragging : ''}`}
-          style={isDragging ? { transform: `rotate(${dragRotation}deg)` } : undefined}
           onMouseDown={handleToolbarMouseDown}
           onClick={!isActive ? handleToggle : undefined}
           role={!isActive ? 'button' : undefined}
