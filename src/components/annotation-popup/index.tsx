@@ -6,7 +6,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from 'react'
-import styles from './AnnotationPopup.module.scss'
+import styles from './annotation-popup.module.scss'
 
 export interface AnnotationPopupProps {
   element: string

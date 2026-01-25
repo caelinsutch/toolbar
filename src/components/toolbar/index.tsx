@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import styles from './Toolbar.module.scss'
-import { AnnotationPopup, type AnnotationPopupHandle } from '../AnnotationPopup'
+import styles from './toolbar.module.scss'
+import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup'
 import { identifyElement, getNearbyText, getElementClasses } from '../../utils/element-identification'
 import type { Annotation } from '../../types'
 
@@ -56,6 +56,7 @@ export default function Toolbar() {
   const [scrollY, setScrollY] = useState(0)
 
   const [showEntranceAnimation, setShowEntranceAnimation] = useState(false)
+  const [animationsPaused, setAnimationsPaused] = useState(false)
   const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartPos, setDragStartPos] = useState<{
@@ -143,6 +144,10 @@ export default function Toolbar() {
         cursor: text !important;
       }
       [data-feedback-toolbar], [data-feedback-toolbar] * { cursor: default !important; }
+      [data-annotation-popup], [data-annotation-popup] * { cursor: auto !important; }
+      [data-annotation-popup] button { cursor: pointer !important; }
+      [data-annotation-popup] button:disabled { cursor: not-allowed !important; }
+      [data-annotation-popup] textarea { cursor: text !important; }
       [data-annotation-marker], [data-annotation-marker] * { cursor: pointer !important; }
     `
     document.head.appendChild(style)
@@ -374,6 +379,29 @@ export default function Toolbar() {
     setShowMarkers(!showMarkers)
   }
 
+  const toggleAnimations = () => {
+    setAnimationsPaused(!animationsPaused)
+  }
+
+  useEffect(() => {
+    if (!animationsPaused) return
+
+    const style = document.createElement('style')
+    style.id = 'toolbar-animation-pause'
+    style.textContent = `
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      const existing = document.getElementById('toolbar-animation-pause')
+      if (existing) existing.remove()
+    }
+  }, [animationsPaused])
+
   return (
     <>
       {isSelecting &&
@@ -508,26 +536,20 @@ export default function Toolbar() {
           </div>
         )}
 
-        {isActive ? (
-          <div
-            className={`${styles.toolbarContainer} ${styles.expanded} ${
-              showEntranceAnimation ? styles.entrance : ''
-            } ${isDragging ? styles.dragging : ''}`}
-            style={isDragging ? { transform: `rotate(${dragRotation}deg)` } : undefined}
-            onMouseDown={handleToolbarMouseDown}
-          >
-            <div className={`${styles.toggleContent} ${styles.hidden}`}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M10 2L12.5 7.5L18 8.5L14 13L15 18.5L10 15.5L5 18.5L6 13L2 8.5L7.5 7.5L10 2Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-
-            <div className={`${styles.controlsContent} ${styles.visible}`}>
-              <div className={styles.buttonWrapper}>
-                <button
+        <div
+          className={`${styles.toolbarContainer} ${isActive ? styles.expanded : styles.collapsed} ${
+            showEntranceAnimation ? styles.entrance : ''
+          } ${isDragging ? styles.dragging : ''}`}
+          style={isDragging ? { transform: `rotate(${dragRotation}deg)` } : undefined}
+          onMouseDown={handleToolbarMouseDown}
+          onClick={!isActive ? handleToggle : undefined}
+          role={!isActive ? 'button' : undefined}
+          tabIndex={!isActive ? 0 : undefined}
+          aria-label={!isActive ? 'Open toolbar' : undefined}
+        >
+          <div className={`${styles.controlsContent} ${isActive ? styles.visible : styles.hidden}`}>
+            <div className={styles.buttonWrapper}>
+              <button
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
@@ -593,6 +615,35 @@ export default function Toolbar() {
                 className={styles.controlButton}
                 onClick={(e) => {
                   e.stopPropagation()
+                  toggleAnimations()
+                }}
+                data-active={animationsPaused}
+                aria-label={animationsPaused ? 'Resume animations' : 'Pause animations'}
+                aria-pressed={animationsPaused}
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  {animationsPaused ? (
+                    <path
+                      d="M6 4L16 10L6 16V4Z"
+                      fill="currentColor"
+                    />
+                  ) : (
+                    <>
+                      <rect x="5" y="4" width="3" height="12" rx="1" fill="currentColor" />
+                      <rect x="12" y="4" width="3" height="12" rx="1" fill="currentColor" />
+                    </>
+                  )}
+                </svg>
+              </button>
+              <div className={styles.buttonTooltip}>{animationsPaused ? 'Resume Animations' : 'Pause Animations'}</div>
+            </div>
+
+            <div className={styles.buttonWrapper}>
+              <button
+                type="button"
+                className={styles.controlButton}
+                onClick={(e) => {
+                  e.stopPropagation()
                   clearAll()
                 }}
                 disabled={annotations.length === 0}
@@ -637,28 +688,17 @@ export default function Toolbar() {
               </button>
               <div className={styles.buttonTooltip}>Close</div>
             </div>
-            </div>
           </div>
-        ) : (
-          <button
-            type="button"
-            className={`${styles.toolbarContainer} ${styles.collapsed} ${
-              showEntranceAnimation ? styles.entrance : ''
-            }`}
-            onMouseDown={handleToolbarMouseDown}
-            onClick={handleToggle}
-            aria-label="Open toolbar"
-          >
-            <div className={`${styles.toggleContent} ${styles.visible}`}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M10 2L12.5 7.5L18 8.5L14 13L15 18.5L10 15.5L5 18.5L6 13L2 8.5L7.5 7.5L10 2Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </div>
-          </button>
-        )}
+
+          <div className={`${styles.toggleContent} ${isActive ? styles.hidden : styles.visible}`}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path
+                d="M10 2L12.5 7.5L18 8.5L14 13L15 18.5L10 15.5L5 18.5L6 13L2 8.5L7.5 7.5L10 2Z"
+                fill="currentColor"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
     </>
   )
