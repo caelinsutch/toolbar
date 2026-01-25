@@ -41,3 +41,28 @@ export interface LayoutShift {
   description?: string;
   scrollY: number; // Scroll position when shift was detected
 }
+
+// Accessibility Audit Types
+export type AccessibilityImpact = 'critical' | 'serious' | 'moderate' | 'minor';
+
+export interface AccessibilityIssue {
+  id: string;
+  ruleId: string;
+  impact: AccessibilityImpact;
+  description: string;
+  help: string;
+  helpUrl: string;
+  element: Element | null;
+  elementSelector: string;
+  elementHtml: string;
+  failureSummary: string;
+  wcagTags: string[];
+  timestamp: number;
+}
+
+export interface RecordedAccessibilityState {
+  id: string;
+  name: string;
+  timestamp: number;
+  issues: AccessibilityIssue[];
+}

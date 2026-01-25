@@ -348,6 +348,159 @@ function App() {
         </div>
       </section>
 
+      <section style={{ marginTop: '3rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Accessibility Testing</h2>
+        <p style={{ opacity: 0.8, marginBottom: '1.5rem' }}>
+          Click the accessibility button (person icon) in the toolbar, then click &quot;Run Audit&quot; to check this page.
+          The elements below have intentional accessibility issues for testing purposes.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Low contrast text - WCAG 1.4.3 violation */}
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Low Contrast Text</h3>
+            <p style={{ color: '#777777', backgroundColor: '#888888', padding: '0.5rem', borderRadius: '0.25rem' }}>
+              This text has very low contrast (1.13:1 ratio) and fails WCAG AA guidelines (needs 4.5:1).
+            </p>
+            <p style={{ color: '#999', backgroundColor: '#aaa', padding: '0.5rem', borderRadius: '0.25rem', marginTop: '0.5rem' }}>
+              Another low contrast example - light gray on slightly lighter gray.
+            </p>
+          </div>
+
+          {/* Image without alt text - WCAG 1.1.1 violation */}
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Image Without Alt Text</h3>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <img
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60' viewBox='0 0 100 60'%3E%3Crect fill='%234ecdc4' width='100' height='60'/%3E%3Ctext x='50' y='35' fill='white' text-anchor='middle' font-size='12'%3ENo Alt%3C/text%3E%3C/svg%3E"
+              style={{ borderRadius: '0.25rem' }}
+            />
+          </div>
+
+          {/* Link without href - WCAG 2.1.1 violation */}
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Links Without Proper Href</h3>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              <a style={{ color: '#3c82f7', cursor: 'pointer' }}>Link without href</a>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              <a href="#" style={{ color: '#3c82f7' }}>Empty hash link</a>
+            </div>
+          </div>
+
+          {/* Form input without label - WCAG 1.3.1, 4.1.2 violation */}
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Form Inputs Without Labels</h3>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="No label input"
+                style={{
+                  padding: '0.5rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '0.25rem',
+                  color: 'white',
+                }}
+              />
+              <select
+                style={{
+                  padding: '0.5rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '0.25rem',
+                  color: 'white',
+                }}
+              >
+                <option>Select without label</option>
+                <option>Option 1</option>
+                <option>Option 2</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Button without accessible name - WCAG 4.1.2 violation */}
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Buttons Without Accessible Names</h3>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                type="button"
+                style={{
+                  width: 40,
+                  height: 40,
+                  background: '#3c82f7',
+                  border: 'none',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {/* Icon-only button without aria-label */}
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                  <path d="M10 3v14M3 10h14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                style={{
+                  width: 40,
+                  height: 40,
+                  background: '#ff6b6b',
+                  border: 'none',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {/* Another icon-only button */}
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                  <path d="M5 5l10 10M15 5L5 15" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive element issues */}
+          <div>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem', opacity: 0.7 }}>Interactive Element Issues</h3>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              {/* Role button without keyboard support - WCAG 2.1.1 */}
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
+              <div
+                role="button"
+                onClick={() => alert('Clicked!')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#f59e0b',
+                  color: 'white',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  display: 'inline-block',
+                  fontWeight: 500,
+                }}
+              >
+                role=button, no keyboard
+              </div>
+              {/* Focusable div without keyboard handler */}
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-tabindex */}
+              <div
+                tabIndex={0}
+                onClick={() => alert('Clicked!')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#8b5cf6',
+                  color: 'white',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  display: 'inline-block',
+                  fontWeight: 500,
+                }}
+              >
+                tabIndex=0, no role
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div style={{ height: '50vh' }} />
 
       <Toolbar />

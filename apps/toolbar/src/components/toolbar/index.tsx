@@ -4,6 +4,10 @@ import styles from './toolbar.module.scss'
 import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup'
 import { identifyElement, getNearbyText, getElementClasses } from '../../utils/element-identification'
 import { useLayoutShiftDetection, type ClsRating } from '../../hooks/use-layout-shift-detection'
+import { useAccessibilityAudit, getElement } from '../../hooks/use-accessibility-audit'
+import { useScreenReaderPreview } from '../../hooks/use-screen-reader-preview'
+import { AccessibilityPanel, accessibilityPanelStyles } from '../accessibility-panel'
+import { ScreenReaderPreview } from '../screen-reader-preview'
 import type { Annotation } from '@toolbar/types'
 
 let hasPlayedEntranceAnimation = false
@@ -41,7 +45,6 @@ function isElementFixed(element: HTMLElement): boolean {
 
 export default function Toolbar() {
   const [isActive, setIsActive] = useState(false)
-  const [isSelecting, setIsSelecting] = useState(false)
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [showMarkers, setShowMarkers] = useState(true)
   const [markersVisible, setMarkersVisible] = useState(false)
@@ -66,7 +69,7 @@ export default function Toolbar() {
     toolbarX: number
     toolbarY: number
   } | null>(null)
-  const [clsDetectionActive, setClsDetectionActive] = useState(false)
+  const [activeMode, setActiveMode] = useState<'select' | 'cls' | 'a11y' | 'screenReader' | null>(null)
   const [clsFilterThreshold, setClsFilterThreshold] = useState(0.01)
   const [hoveredShiftId, setHoveredShiftId] = useState<string | null>(null)
   const didDragRef = useRef(false)
@@ -74,11 +77,46 @@ export default function Toolbar() {
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { shifts, cumulativeCls, clsRating, clearShifts, replayShift, isSupported: clsSupported } = useLayoutShiftDetection({
-    enabled: clsDetectionActive,
+    enabled: activeMode === 'cls',
     filterThreshold: clsFilterThreshold,
   })
 
+  const {
+    issues: a11yIssues,
+    summary: a11ySummary,
+    isRunning: a11yIsRunning,
+    runAudit: a11yRunAudit,
+    clearIssues: a11yClearIssues,
+    highlightedIssueId,
+    highlightElement: a11yHighlightElement,
+    clearHighlight: a11yClearHighlight,
+    scrollToAndLogElement: a11yScrollToElement,
+    isRecording: a11yIsRecording,
+    recordedStates: a11yRecordedStates,
+    startRecording: a11yStartRecording,
+    stopRecording: a11yStopRecording,
+    captureCurrentState: a11yCaptureState,
+    activeFilter: a11yActiveFilter,
+    setActiveFilter: a11ySetActiveFilter,
+  } = useAccessibilityAudit({
+    enabled: activeMode === 'a11y',
+  })
+
+  const [srHighlightedElement, setSrHighlightedElement] = useState<Element | null>(null)
+  const {
+    nodes: srNodes,
+    isGenerating: srIsGenerating,
+    generatePreview: srGeneratePreview,
+    clearPreview: srClearPreview,
+  } = useScreenReaderPreview()
+
   const filteredShifts = shifts.filter((shift) => shift.value >= clsFilterThreshold)
+
+  // Derived states for convenience
+  const isSelecting = activeMode === 'select'
+  const clsDetectionActive = activeMode === 'cls'
+  const a11yAuditActive = activeMode === 'a11y'
+  const screenReaderActive = activeMode === 'screenReader'
 
   useEffect(() => {
     if (!hasPlayedEntranceAnimation) {
@@ -136,7 +174,7 @@ export default function Toolbar() {
     if (!isActive) {
       setPendingAnnotation(null)
       setHoverInfo(null)
-      setIsSelecting(false)
+      setActiveMode(null)
     }
   }, [isActive])
 
@@ -378,7 +416,7 @@ export default function Toolbar() {
   }
 
   const toggleSelecting = () => {
-    setIsSelecting(!isSelecting)
+    setActiveMode(activeMode === 'select' ? null : 'select')
   }
 
   const toggleMarkers = () => {
@@ -391,17 +429,17 @@ export default function Toolbar() {
 
   const handleClsButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setClsDetectionActive(!clsDetectionActive)
+    setActiveMode(activeMode === 'cls' ? null : 'cls')
   }
 
   const getClsRatingClass = (rating: ClsRating): string => {
     switch (rating) {
       case 'good':
-        return styles.good
+        return styles.good ?? ''
       case 'needs-improvement':
-        return styles.needsImprovement
+        return styles.needsImprovement ?? ''
       case 'poor':
-        return styles.poor
+        return styles.poor ?? ''
     }
   }
 
@@ -679,6 +717,96 @@ export default function Toolbar() {
           document.body
         )}
 
+      {a11yAuditActive && isActive &&
+        createPortal(
+          <AccessibilityPanel
+            issues={a11yIssues}
+            summary={a11ySummary}
+            isRunning={a11yIsRunning}
+            onRunAudit={a11yRunAudit}
+            onClearIssues={a11yClearIssues}
+            onHoverIssue={a11yHighlightElement}
+            onLeaveIssue={a11yClearHighlight}
+            onClickIssue={a11yScrollToElement}
+            isRecording={a11yIsRecording}
+            recordedStates={a11yRecordedStates}
+            onStartRecording={a11yStartRecording}
+            onStopRecording={a11yStopRecording}
+            onCaptureState={a11yCaptureState}
+            activeFilter={a11yActiveFilter}
+            onFilterChange={a11ySetActiveFilter}
+            style={{
+              position: 'fixed',
+              bottom: toolbarPosition ? `calc(100vh - ${toolbarPosition.y}px + 14px)` : 'calc(1.25rem + 44px + 14px)',
+              right: toolbarPosition ? `calc(100vw - ${toolbarPosition.x}px - 297px)` : '1.25rem',
+            }}
+          />,
+          document.body
+        )}
+
+      {a11yAuditActive && isActive && a11yIssues.length > 0 &&
+        createPortal(
+          <div className={accessibilityPanelStyles.highlightOverlay}>
+            {a11yIssues.map((issue) => {
+              const element = getElement(issue)
+              if (!element) return null
+              const rect = element.getBoundingClientRect()
+              const isHovered = issue.id === highlightedIssueId
+              return (
+                <div
+                  key={issue.id}
+                  className={`${accessibilityPanelStyles.highlight} ${accessibilityPanelStyles[issue.impact]} ${isHovered ? accessibilityPanelStyles.hovered : ''}`}
+                  style={{
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                  }}
+                />
+              )
+            })}
+          </div>,
+          document.body
+        )}
+
+      {screenReaderActive && isActive &&
+        createPortal(
+          <ScreenReaderPreview
+            nodes={srNodes}
+            isGenerating={srIsGenerating}
+            onGenerate={srGeneratePreview}
+            onClear={srClearPreview}
+            onHighlightElement={setSrHighlightedElement}
+            style={{
+              position: 'fixed',
+              bottom: toolbarPosition ? `calc(100vh - ${toolbarPosition.y}px + 14px)` : 'calc(1.25rem + 44px + 14px)',
+              right: toolbarPosition ? `calc(100vw - ${toolbarPosition.x}px - 357px)` : '1.25rem',
+            }}
+          />,
+          document.body
+        )}
+
+      {srHighlightedElement &&
+        createPortal(
+          <div className={accessibilityPanelStyles.highlightOverlay}>
+            {(() => {
+              const rect = srHighlightedElement.getBoundingClientRect()
+              return (
+                <div
+                  className={`${accessibilityPanelStyles.highlight} ${accessibilityPanelStyles.minor} ${accessibilityPanelStyles.hovered}`}
+                  style={{
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                  }}
+                />
+              )
+            })()}
+          </div>,
+          document.body
+        )}
+
       <div
         className={styles.toolbar}
         style={
@@ -819,6 +947,49 @@ export default function Toolbar() {
               <div className={styles.buttonTooltip}>
                 {!clsSupported ? 'CLS (Chrome only)' : 'Layout Shifts'}
               </div>
+            </div>
+
+            <div className={styles.buttonWrapper}>
+              <button
+                type="button"
+                className={styles.controlButton}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setActiveMode(activeMode === 'a11y' ? null : 'a11y')
+                }}
+                data-active={a11yAuditActive}
+                aria-label={a11yAuditActive ? 'Close accessibility audit' : 'Open accessibility audit'}
+                aria-pressed={a11yAuditActive}
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="4" r="2" fill="currentColor" />
+                  <path d="M10 8V14M10 14L7 18M10 14L13 18M4 10H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+              <div className={styles.buttonTooltip}>Accessibility</div>
+            </div>
+
+            <div className={styles.buttonWrapper}>
+              <button
+                type="button"
+                className={styles.controlButton}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setActiveMode(activeMode === 'screenReader' ? null : 'screenReader')
+                }}
+                data-active={screenReaderActive}
+                aria-label={screenReaderActive ? 'Close screen reader preview' : 'Open screen reader preview'}
+                aria-pressed={screenReaderActive}
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V12C17 13.1046 16.1046 14 15 14H5C3.89543 14 3 13.1046 3 12V5Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                  <path d="M7 17H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M10 14V17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <circle cx="10" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                  <path d="M6 11C6 11 7 9 10 9C13 9 14 11 14 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+              <div className={styles.buttonTooltip}>Screen Reader</div>
             </div>
 
             <div className={styles.buttonWrapper}>

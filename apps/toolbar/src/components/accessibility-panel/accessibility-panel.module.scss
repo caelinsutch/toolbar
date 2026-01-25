@@ -1,0 +1,557 @@
+$blue: #3c82f7;
+$red: #ff3b30;
+$green: #34c759;
+$orange: #ff9500;
+$yellow: #ffcc00;
+
+// Impact colors
+$critical: $red;
+$serious: $orange;
+$moderate: $yellow;
+$minor: $blue;
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes highlightIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.panel {
+  width: 320px;
+  max-height: 420px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  z-index: 100001;
+  animation: panelIn 0.15s ease-out forwards;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+
+  &.exiting {
+    animation: panelOut 0.12s ease-out forwards;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+
+  &.hasCritical {
+    background: rgba($critical, 0.2);
+    color: $critical;
+  }
+
+  &.hasSerious {
+    background: rgba($serious, 0.2);
+    color: $serious;
+  }
+}
+
+.runButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba($blue, 0.2);
+  border: none;
+  border-radius: 6px;
+  color: $blue;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba($blue, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filterSelect {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($blue, 0.4);
+  }
+
+  option {
+    background: #1a1a1a;
+    color: #fff;
+  }
+}
+
+.recordButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &.recording {
+    background: rgba($red, 0.2);
+    color: $red;
+  }
+}
+
+.recordingDot {
+  width: 6px;
+  height: 6px;
+  background: $red;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.clearButton {
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.recordingControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba($red, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recordingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: $red;
+  font-weight: 500;
+}
+
+.captureButton {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba($red, 0.2);
+  border: none;
+  border-radius: 6px;
+  color: $red;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba($red, 0.3);
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.empty {
+  padding: 24px 14px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.emptyIcon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.issueGroup {
+  padding: 6px;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.groupCount {
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.issueItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  &:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.impactDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+
+  &.critical {
+    background: $critical;
+  }
+
+  &.serious {
+    background: $serious;
+  }
+
+  &.moderate {
+    background: $moderate;
+  }
+
+  &.minor {
+    background: $minor;
+  }
+}
+
+.issueContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.issueHelp {
+  font-size: 12px;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.issueSelector {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+  font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.issueLink {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: $blue;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.recordedStates {
+  padding: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recordedStatesHeader {
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.recordedState {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  &.active {
+    background: rgba($blue, 0.15);
+  }
+}
+
+.stateName {
+  flex: 1;
+  font-size: 12px;
+  color: #fff;
+}
+
+.stateCount {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+// Highlight overlay for elements
+.highlightOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99997;
+  pointer-events: none;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.highlight {
+  position: fixed;
+  border-radius: 4px;
+  pointer-events: none;
+  box-sizing: border-box;
+  animation: highlightIn 0.12s ease-out forwards;
+  transition: opacity 0.2s ease, border-width 0.15s ease, box-shadow 0.2s ease;
+
+  // Default state - subtle indicators
+  &.critical {
+    border: 2px dashed rgba($critical, 0.5);
+    background: rgba($critical, 0.06);
+  }
+
+  &.serious {
+    border: 2px dashed rgba($serious, 0.5);
+    background: rgba($serious, 0.06);
+  }
+
+  &.moderate {
+    border: 2px dashed rgba($moderate, 0.5);
+    background: rgba($moderate, 0.06);
+  }
+
+  &.minor {
+    border: 2px dashed rgba($minor, 0.5);
+    background: rgba($minor, 0.06);
+  }
+
+  // Hovered state - prominent with pulse
+  &.hovered {
+    z-index: 1;
+    animation: highlightIn 0.12s ease-out forwards, highlightPulse 1.5s ease-in-out 0.12s infinite;
+
+    &.critical {
+      border: 3px solid rgba($critical, 1);
+      background: rgba($critical, 0.15);
+      box-shadow: 0 0 0 4px rgba($critical, 0.2), 0 0 20px rgba($critical, 0.3);
+    }
+
+    &.serious {
+      border: 3px solid rgba($serious, 1);
+      background: rgba($serious, 0.15);
+      box-shadow: 0 0 0 4px rgba($serious, 0.2), 0 0 20px rgba($serious, 0.3);
+    }
+
+    &.moderate {
+      border: 3px solid rgba($moderate, 1);
+      background: rgba($moderate, 0.15);
+      box-shadow: 0 0 0 4px rgba($moderate, 0.2), 0 0 20px rgba($moderate, 0.3);
+    }
+
+    &.minor {
+      border: 3px solid rgba($minor, 1);
+      background: rgba($minor, 0.15);
+      box-shadow: 0 0 0 4px rgba($minor, 0.2), 0 0 20px rgba($minor, 0.3);
+    }
+  }
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba($blue, 0.3);
+  border-top-color: $blue;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

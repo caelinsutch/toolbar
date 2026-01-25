@@ -18,11 +18,11 @@ interface ShiftPanelProps {
 function getClsRatingClass(rating: ClsRating): string {
   switch (rating) {
     case 'good':
-      return styles.good
+      return styles.good ?? ''
     case 'needs-improvement':
-      return styles.needsImprovement
+      return styles.needsImprovement ?? ''
     case 'poor':
-      return styles.poor
+      return styles.poor ?? ''
   }
 }
 

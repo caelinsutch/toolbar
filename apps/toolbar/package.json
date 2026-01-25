@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@toolbar/types": "workspace:*"
+    "@toolbar/types": "workspace:*",
+    "axe-core": "^4.11.1"
   },
   "devDependencies": {
     "@toolbar/tsconfig": "workspace:*",
