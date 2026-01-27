@@ -1,5 +1,5 @@
 {
-  "name": "@toolbar/app",
+  "name": "@toolbar/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@toolbar/types": "workspace:*",
-    "axe-core": "^4.11.1"
+    "cloudflare-toolbar": "workspace:*"
   },
   "devDependencies": {
     "@toolbar/tsconfig": "workspace:*",
@@ -24,7 +23,6 @@
     "@vitejs/plugin-react": "^5.1.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "sass": "^1.97.3",
     "typescript": "^5",
     "vite": "^7.3.1"
   }

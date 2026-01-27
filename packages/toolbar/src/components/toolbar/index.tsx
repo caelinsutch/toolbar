@@ -1,85 +1,98 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import styles from './toolbar.module.scss'
-import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup'
-import { identifyElement, getNearbyText, getElementClasses } from '../../utils/element-identification'
-import { useLayoutShiftDetection, type ClsRating } from '../../hooks/use-layout-shift-detection'
-import { useAccessibilityAudit, getElement } from '../../hooks/use-accessibility-audit'
-import { useScreenReaderPreview } from '../../hooks/use-screen-reader-preview'
-import { AccessibilityPanel, accessibilityPanelStyles } from '../accessibility-panel'
-import { ScreenReaderPreview } from '../screen-reader-preview'
-import type { Annotation } from '@toolbar/types'
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { getElement, useAccessibilityAudit } from '../../hooks/use-accessibility-audit';
+import { type ClsRating, useLayoutShiftDetection } from '../../hooks/use-layout-shift-detection';
+import { useScreenReaderPreview } from '../../hooks/use-screen-reader-preview';
+import type { Annotation } from '../../types';
+import {
+  getElementClasses,
+  getNearbyText,
+  identifyElement,
+} from '../../utils/element-identification';
+import { AccessibilityPanel, accessibilityPanelStyles } from '../accessibility-panel';
+import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup';
+import { ScreenReaderPreview } from '../screen-reader-preview';
+import styles from './toolbar.module.scss';
 
-let hasPlayedEntranceAnimation = false
+let hasPlayedEntranceAnimation = false;
 
 type HoverInfo = {
-  element: string
-  elementPath: string
-  rect: DOMRect | null
-}
+  element: string;
+  elementPath: string;
+  rect: DOMRect | null;
+};
 
 type PendingAnnotation = {
-  x: number
-  y: number
-  clientY: number
-  element: string
-  elementPath: string
-  selectedText?: string
-  boundingBox?: { x: number; y: number; width: number; height: number }
-  nearbyText?: string
-  cssClasses?: string
-  isFixed?: boolean
-}
+  x: number;
+  y: number;
+  clientY: number;
+  element: string;
+  elementPath: string;
+  selectedText?: string;
+  boundingBox?: { x: number; y: number; width: number; height: number };
+  nearbyText?: string;
+  cssClasses?: string;
+  isFixed?: boolean;
+};
 
 function isElementFixed(element: HTMLElement): boolean {
-  let current: HTMLElement | null = element
+  let current: HTMLElement | null = element;
   while (current && current !== document.body) {
-    const style = window.getComputedStyle(current)
+    const style = window.getComputedStyle(current);
     if (style.position === 'fixed' || style.position === 'sticky') {
-      return true
+      return true;
     }
-    current = current.parentElement
+    current = current.parentElement;
   }
-  return false
+  return false;
 }
 
 export default function Toolbar() {
-  const [isActive, setIsActive] = useState(false)
-  const [annotations, setAnnotations] = useState<Annotation[]>([])
-  const [showMarkers, setShowMarkers] = useState(true)
-  const [markersVisible, setMarkersVisible] = useState(false)
-  const [markersExiting, setMarkersExiting] = useState(false)
-  const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null)
-  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 })
-  const [pendingAnnotation, setPendingAnnotation] = useState<PendingAnnotation | null>(null)
-  const [pendingExiting, setPendingExiting] = useState(false)
-  const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
-  const [animatedMarkers, setAnimatedMarkers] = useState<Set<string>>(new Set())
-  const [exitingMarkers, setExitingMarkers] = useState<Set<string>>(new Set())
-  const [isClearing, setIsClearing] = useState(false)
-  const [scrollY, setScrollY] = useState(0)
+  const [isActive, setIsActive] = useState(false);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [showMarkers, setShowMarkers] = useState(true);
+  const [markersVisible, setMarkersVisible] = useState(false);
+  const [markersExiting, setMarkersExiting] = useState(false);
+  const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const [pendingAnnotation, setPendingAnnotation] = useState<PendingAnnotation | null>(null);
+  const [pendingExiting, setPendingExiting] = useState(false);
+  const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
+  const [animatedMarkers, setAnimatedMarkers] = useState<Set<string>>(new Set());
+  const [exitingMarkers, setExitingMarkers] = useState<Set<string>>(new Set());
+  const [isClearing, setIsClearing] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
 
-  const [showEntranceAnimation, setShowEntranceAnimation] = useState(false)
-  const [animationsPaused, setAnimationsPaused] = useState(false)
-  const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
+  const [showEntranceAnimation, setShowEntranceAnimation] = useState(false);
+  const [animationsPaused, setAnimationsPaused] = useState(false);
+  const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [dragStartPos, setDragStartPos] = useState<{
-    x: number
-    y: number
-    toolbarX: number
-    toolbarY: number
-  } | null>(null)
-  const [activeMode, setActiveMode] = useState<'select' | 'cls' | 'a11y' | 'screenReader' | null>(null)
-  const [clsFilterThreshold, setClsFilterThreshold] = useState(0.01)
-  const [hoveredShiftId, setHoveredShiftId] = useState<string | null>(null)
-  const didDragRef = useRef(false)
-  const popupRef = useRef<AnnotationPopupHandle>(null)
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    x: number;
+    y: number;
+    toolbarX: number;
+    toolbarY: number;
+  } | null>(null);
+  const [activeMode, setActiveMode] = useState<'select' | 'cls' | 'a11y' | 'screenReader' | null>(
+    null
+  );
+  const [clsFilterThreshold, setClsFilterThreshold] = useState(0.01);
+  const [hoveredShiftId, setHoveredShiftId] = useState<string | null>(null);
+  const didDragRef = useRef(false);
+  const popupRef = useRef<AnnotationPopupHandle>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { shifts, cumulativeCls, clsRating, clearShifts, replayShift, isSupported: clsSupported } = useLayoutShiftDetection({
+  const {
+    shifts,
+    cumulativeCls,
+    clsRating,
+    clearShifts,
+    replayShift,
+    isSupported: clsSupported,
+  } = useLayoutShiftDetection({
     enabled: activeMode === 'cls',
     filterThreshold: clsFilterThreshold,
-  })
+  });
 
   const {
     issues: a11yIssues,
@@ -100,89 +113,89 @@ export default function Toolbar() {
     setActiveFilter: a11ySetActiveFilter,
   } = useAccessibilityAudit({
     enabled: activeMode === 'a11y',
-  })
+  });
 
-  const [srHighlightedElement, setSrHighlightedElement] = useState<Element | null>(null)
+  const [srHighlightedElement, setSrHighlightedElement] = useState<Element | null>(null);
   const {
     nodes: srNodes,
     isGenerating: srIsGenerating,
     generatePreview: srGeneratePreview,
     clearPreview: srClearPreview,
-  } = useScreenReaderPreview()
+  } = useScreenReaderPreview();
 
-  const filteredShifts = shifts.filter((shift) => shift.value >= clsFilterThreshold)
+  const filteredShifts = shifts.filter((shift) => shift.value >= clsFilterThreshold);
 
   // Derived states for convenience
-  const isSelecting = activeMode === 'select'
-  const clsDetectionActive = activeMode === 'cls'
-  const a11yAuditActive = activeMode === 'a11y'
-  const screenReaderActive = activeMode === 'screenReader'
+  const isSelecting = activeMode === 'select';
+  const clsDetectionActive = activeMode === 'cls';
+  const a11yAuditActive = activeMode === 'a11y';
+  const screenReaderActive = activeMode === 'screenReader';
 
   useEffect(() => {
     if (!hasPlayedEntranceAnimation) {
-      setShowEntranceAnimation(true)
-      hasPlayedEntranceAnimation = true
-      setTimeout(() => setShowEntranceAnimation(false), 750)
+      setShowEntranceAnimation(true);
+      hasPlayedEntranceAnimation = true;
+      setTimeout(() => setShowEntranceAnimation(false), 750);
     }
-    setScrollY(window.scrollY)
-  }, [])
+    setScrollY(window.scrollY);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrollY(window.scrollY)
+      setScrollY(window.scrollY);
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
+        clearTimeout(scrollTimeoutRef.current);
       }
-      scrollTimeoutRef.current = setTimeout(() => {}, 150)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
+      scrollTimeoutRef.current = setTimeout(() => {}, 150);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handleScroll);
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
+        clearTimeout(scrollTimeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
-  const shouldShowMarkers = isActive && showMarkers
+  const shouldShowMarkers = isActive && showMarkers;
   useEffect(() => {
     if (shouldShowMarkers) {
-      setMarkersExiting(false)
-      setMarkersVisible(true)
-      setAnimatedMarkers(new Set())
+      setMarkersExiting(false);
+      setMarkersVisible(true);
+      setAnimatedMarkers(new Set());
       const timer = setTimeout(() => {
         setAnimatedMarkers((prev) => {
-          const newSet = new Set(prev)
+          const newSet = new Set(prev);
           for (const a of annotations) {
-            newSet.add(a.id)
+            newSet.add(a.id);
           }
-          return newSet
-        })
-      }, 350)
-      return () => clearTimeout(timer)
+          return newSet;
+        });
+      }, 350);
+      return () => clearTimeout(timer);
     } else if (markersVisible) {
-      setMarkersExiting(true)
+      setMarkersExiting(true);
       const timer = setTimeout(() => {
-        setMarkersVisible(false)
-        setMarkersExiting(false)
-      }, 250)
-      return () => clearTimeout(timer)
+        setMarkersVisible(false);
+        setMarkersExiting(false);
+      }, 250);
+      return () => clearTimeout(timer);
     }
-  }, [shouldShowMarkers, annotations, markersVisible])
+  }, [shouldShowMarkers, annotations, markersVisible]);
 
   useEffect(() => {
     if (!isActive) {
-      setPendingAnnotation(null)
-      setHoverInfo(null)
-      setActiveMode(null)
+      setPendingAnnotation(null);
+      setHoverInfo(null);
+      setActiveMode(null);
     }
-  }, [isActive])
+  }, [isActive]);
 
   useEffect(() => {
-    if (!isSelecting) return
+    if (!isSelecting) return;
 
-    const style = document.createElement('style')
-    style.id = 'toolbar-cursor-styles'
+    const style = document.createElement('style');
+    style.id = 'toolbar-cursor-styles';
     style.textContent = `
       body * { cursor: crosshair !important; }
       body p, body span, body h1, body h2, body h3, body h4, body h5, body h6,
@@ -197,65 +210,65 @@ export default function Toolbar() {
       [data-annotation-popup] button:disabled { cursor: not-allowed !important; }
       [data-annotation-popup] textarea { cursor: text !important; }
       [data-annotation-marker], [data-annotation-marker] * { cursor: pointer !important; }
-    `
-    document.head.appendChild(style)
+    `;
+    document.head.appendChild(style);
     return () => {
-      const existing = document.getElementById('toolbar-cursor-styles')
-      if (existing) existing.remove()
-    }
-  }, [isSelecting])
+      const existing = document.getElementById('toolbar-cursor-styles');
+      if (existing) existing.remove();
+    };
+  }, [isSelecting]);
 
   useEffect(() => {
-    if (!isSelecting || pendingAnnotation) return
+    if (!isSelecting || pendingAnnotation) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if ((e.target as HTMLElement).closest('[data-feedback-toolbar]')) {
-        setHoverInfo(null)
-        return
+        setHoverInfo(null);
+        return;
       }
-      const elementUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement
+      const elementUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
       if (!elementUnder || elementUnder.closest('[data-feedback-toolbar]')) {
-        setHoverInfo(null)
-        return
+        setHoverInfo(null);
+        return;
       }
-      const { name, path } = identifyElement(elementUnder)
-      const rect = elementUnder.getBoundingClientRect()
-      setHoverInfo({ element: name, elementPath: path, rect })
-      setHoverPosition({ x: e.clientX, y: e.clientY })
-    }
-    document.addEventListener('mousemove', handleMouseMove)
-    return () => document.removeEventListener('mousemove', handleMouseMove)
-  }, [isSelecting, pendingAnnotation])
+      const { name, path } = identifyElement(elementUnder);
+      const rect = elementUnder.getBoundingClientRect();
+      setHoverInfo({ element: name, elementPath: path, rect });
+      setHoverPosition({ x: e.clientX, y: e.clientY });
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, [isSelecting, pendingAnnotation]);
 
   useEffect(() => {
-    if (!isSelecting) return
+    if (!isSelecting) return;
 
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (target.closest('[data-feedback-toolbar]')) return
-      if (target.closest('[data-annotation-popup]')) return
-      if (target.closest('[data-annotation-marker]')) return
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-feedback-toolbar]')) return;
+      if (target.closest('[data-annotation-popup]')) return;
+      if (target.closest('[data-annotation-marker]')) return;
 
       if (pendingAnnotation) {
-        e.preventDefault()
-        popupRef.current?.shake()
-        return
+        e.preventDefault();
+        popupRef.current?.shake();
+        return;
       }
 
-      e.preventDefault()
-      const elementUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement
-      if (!elementUnder) return
+      e.preventDefault();
+      const elementUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
+      if (!elementUnder) return;
 
-      const { name, path } = identifyElement(elementUnder)
-      const rect = elementUnder.getBoundingClientRect()
-      const x = (e.clientX / window.innerWidth) * 100
-      const isFixed = isElementFixed(elementUnder)
-      const y = isFixed ? e.clientY : e.clientY + window.scrollY
+      const { name, path } = identifyElement(elementUnder);
+      const rect = elementUnder.getBoundingClientRect();
+      const x = (e.clientX / window.innerWidth) * 100;
+      const isFixed = isElementFixed(elementUnder);
+      const y = isFixed ? e.clientY : e.clientY + window.scrollY;
 
-      const selection = window.getSelection()
-      let selectedText: string | undefined
+      const selection = window.getSelection();
+      let selectedText: string | undefined;
       if (selection && selection.toString().trim().length > 0) {
-        selectedText = selection.toString().trim().slice(0, 500)
+        selectedText = selection.toString().trim().slice(0, 500);
       }
 
       setPendingAnnotation({
@@ -274,17 +287,17 @@ export default function Toolbar() {
         nearbyText: getNearbyText(elementUnder),
         cssClasses: getElementClasses(elementUnder),
         isFixed,
-      })
-      setHoverInfo(null)
-    }
+      });
+      setHoverInfo(null);
+    };
 
-    document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
-  }, [isSelecting, pendingAnnotation])
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [isSelecting, pendingAnnotation]);
 
   const addAnnotation = useCallback(
     (comment: string) => {
-      if (!pendingAnnotation) return
+      if (!pendingAnnotation) return;
       const newAnnotation: Annotation = {
         id: Date.now().toString(),
         x: pendingAnnotation.x,
@@ -298,175 +311,175 @@ export default function Toolbar() {
         nearbyText: pendingAnnotation.nearbyText,
         cssClasses: pendingAnnotation.cssClasses,
         isFixed: pendingAnnotation.isFixed,
-      }
-      setAnnotations((prev) => [...prev, newAnnotation])
+      };
+      setAnnotations((prev) => [...prev, newAnnotation]);
       setTimeout(() => {
-        setAnimatedMarkers((prev) => new Set(prev).add(newAnnotation.id))
-      }, 250)
-      setPendingExiting(true)
+        setAnimatedMarkers((prev) => new Set(prev).add(newAnnotation.id));
+      }, 250);
+      setPendingExiting(true);
       setTimeout(() => {
-        setPendingAnnotation(null)
-        setPendingExiting(false)
-      }, 150)
-      window.getSelection()?.removeAllRanges()
+        setPendingAnnotation(null);
+        setPendingExiting(false);
+      }, 150);
+      window.getSelection()?.removeAllRanges();
     },
     [pendingAnnotation]
-  )
+  );
 
   const cancelAnnotation = useCallback(() => {
-    setPendingExiting(true)
+    setPendingExiting(true);
     setTimeout(() => {
-      setPendingAnnotation(null)
-      setPendingExiting(false)
-    }, 150)
-  }, [])
+      setPendingAnnotation(null);
+      setPendingExiting(false);
+    }, 150);
+  }, []);
 
   const deleteAnnotation = useCallback((id: string) => {
-    setExitingMarkers((prev) => new Set(prev).add(id))
+    setExitingMarkers((prev) => new Set(prev).add(id));
     setTimeout(() => {
-      setAnnotations((prev) => prev.filter((a) => a.id !== id))
+      setAnnotations((prev) => prev.filter((a) => a.id !== id));
       setExitingMarkers((prev) => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
-    }, 150)
-  }, [])
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 150);
+  }, []);
 
   const clearAll = useCallback(() => {
-    if (annotations.length === 0) return
-    setIsClearing(true)
-    const totalTime = annotations.length * 30 + 200
+    if (annotations.length === 0) return;
+    setIsClearing(true);
+    const totalTime = annotations.length * 30 + 200;
     setTimeout(() => {
-      setAnnotations([])
-      setAnimatedMarkers(new Set())
-      setIsClearing(false)
-    }, totalTime)
-  }, [annotations.length])
+      setAnnotations([]);
+      setAnimatedMarkers(new Set());
+      setIsClearing(false);
+    }, totalTime);
+  }, [annotations.length]);
 
   const handleToolbarMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if ((e.target as HTMLElement).closest('button')) return
-      const toolbarParent = (e.currentTarget as HTMLElement).parentElement
-      if (!toolbarParent) return
-      const rect = toolbarParent.getBoundingClientRect()
-      const currentX = toolbarPosition?.x ?? rect.left
-      const currentY = toolbarPosition?.y ?? rect.top
-      didDragRef.current = false
+      if ((e.target as HTMLElement).closest('button')) return;
+      const toolbarParent = (e.currentTarget as HTMLElement).parentElement;
+      if (!toolbarParent) return;
+      const rect = toolbarParent.getBoundingClientRect();
+      const currentX = toolbarPosition?.x ?? rect.left;
+      const currentY = toolbarPosition?.y ?? rect.top;
+      didDragRef.current = false;
       setDragStartPos({
         x: e.clientX,
         y: e.clientY,
         toolbarX: currentX,
         toolbarY: currentY,
-      })
+      });
     },
     [toolbarPosition]
-  )
+  );
 
   useEffect(() => {
-    if (!dragStartPos) return
-    const DRAG_THRESHOLD = 10
+    if (!dragStartPos) return;
+    const DRAG_THRESHOLD = 10;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - dragStartPos.x
-      const deltaY = e.clientY - dragStartPos.y
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+      const deltaX = e.clientX - dragStartPos.x;
+      const deltaY = e.clientY - dragStartPos.y;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       if (distance > DRAG_THRESHOLD) {
         if (!isDragging) {
-          setIsDragging(true)
+          setIsDragging(true);
         }
-        didDragRef.current = true
+        didDragRef.current = true;
 
-        let newX = dragStartPos.toolbarX + deltaX
-        let newY = dragStartPos.toolbarY + deltaY
-        const padding = 20
-        const containerWidth = 257
-        const circleWidth = 44
-        const toolbarHeight = 44
+        let newX = dragStartPos.toolbarX + deltaX;
+        let newY = dragStartPos.toolbarY + deltaY;
+        const padding = 20;
+        const containerWidth = 257;
+        const circleWidth = 44;
+        const toolbarHeight = 44;
         if (isActive) {
-          newX = Math.max(padding, Math.min(window.innerWidth - containerWidth - padding, newX))
+          newX = Math.max(padding, Math.min(window.innerWidth - containerWidth - padding, newX));
         } else {
-          const circleOffset = containerWidth - circleWidth
-          const minX = padding - circleOffset
-          const maxX = window.innerWidth - padding - circleOffset - circleWidth
-          newX = Math.max(minX, Math.min(maxX, newX))
+          const circleOffset = containerWidth - circleWidth;
+          const minX = padding - circleOffset;
+          const maxX = window.innerWidth - padding - circleOffset - circleWidth;
+          newX = Math.max(minX, Math.min(maxX, newX));
         }
-        newY = Math.max(padding, Math.min(window.innerHeight - toolbarHeight - padding, newY))
-        setToolbarPosition({ x: newX, y: newY })
+        newY = Math.max(padding, Math.min(window.innerHeight - toolbarHeight - padding, newY));
+        setToolbarPosition({ x: newX, y: newY });
       }
-    }
+    };
 
     const handleMouseUp = () => {
-      setIsDragging(false)
-      setDragStartPos(null)
-    }
+      setIsDragging(false);
+      setDragStartPos(null);
+    };
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [dragStartPos, isDragging, isActive])
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragStartPos, isDragging, isActive]);
 
   const handleToggle = () => {
-    if (didDragRef.current) return
-    setIsActive(!isActive)
-  }
+    if (didDragRef.current) return;
+    setIsActive(!isActive);
+  };
 
   const toggleSelecting = () => {
-    setActiveMode(activeMode === 'select' ? null : 'select')
-  }
+    setActiveMode(activeMode === 'select' ? null : 'select');
+  };
 
   const toggleMarkers = () => {
-    setShowMarkers(!showMarkers)
-  }
+    setShowMarkers(!showMarkers);
+  };
 
   const toggleAnimations = () => {
-    setAnimationsPaused(!animationsPaused)
-  }
+    setAnimationsPaused(!animationsPaused);
+  };
 
   const handleClsButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setActiveMode(activeMode === 'cls' ? null : 'cls')
-  }
+    e.stopPropagation();
+    setActiveMode(activeMode === 'cls' ? null : 'cls');
+  };
 
   const getClsRatingClass = (rating: ClsRating): string => {
     switch (rating) {
       case 'good':
-        return styles.good ?? ''
+        return styles.good ?? '';
       case 'needs-improvement':
-        return styles.needsImprovement ?? ''
+        return styles.needsImprovement ?? '';
       case 'poor':
-        return styles.poor ?? ''
+        return styles.poor ?? '';
     }
-  }
+  };
 
   const formatTime = (timestamp: number): string => {
-    const seconds = Math.floor(timestamp / 1000)
-    const ms = Math.floor(timestamp % 1000)
-    return `${seconds}.${ms.toString().padStart(3, '0')}s`
-  }
+    const seconds = Math.floor(timestamp / 1000);
+    const ms = Math.floor(timestamp % 1000);
+    return `${seconds}.${ms.toString().padStart(3, '0')}s`;
+  };
 
   useEffect(() => {
-    if (!animationsPaused) return
+    if (!animationsPaused) return;
 
-    const style = document.createElement('style')
-    style.id = 'toolbar-animation-pause'
+    const style = document.createElement('style');
+    style.id = 'toolbar-animation-pause';
     style.textContent = `
       *, *::before, *::after {
         animation-duration: 0.001ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.001ms !important;
       }
-    `
-    document.head.appendChild(style)
+    `;
+    document.head.appendChild(style);
     return () => {
-      const existing = document.getElementById('toolbar-animation-pause')
-      if (existing) existing.remove()
-    }
-  }, [animationsPaused])
+      const existing = document.getElementById('toolbar-animation-pause');
+      if (existing) existing.remove();
+    };
+  }, [animationsPaused]);
 
   return (
     <>
@@ -515,9 +528,9 @@ export default function Toolbar() {
         createPortal(
           <div className={styles.markersLayer}>
             {annotations.map((annotation, index) => {
-              const isEntering = !animatedMarkers.has(annotation.id) && !markersExiting
-              const isExiting = exitingMarkers.has(annotation.id) || markersExiting
-              const clearingDelay = isClearing ? index * 30 : 0
+              const isEntering = !animatedMarkers.has(annotation.id) && !markersExiting;
+              const isExiting = exitingMarkers.has(annotation.id) || markersExiting;
+              const clearingDelay = isClearing ? index * 30 : 0;
 
               return (
                 <button
@@ -538,8 +551,8 @@ export default function Toolbar() {
                   onMouseEnter={() => setHoveredMarkerId(annotation.id)}
                   onMouseLeave={() => setHoveredMarkerId(null)}
                   onClick={(e) => {
-                    e.stopPropagation()
-                    deleteAnnotation(annotation.id)
+                    e.stopPropagation();
+                    deleteAnnotation(annotation.id);
                   }}
                   aria-label={`Annotation ${index + 1}: ${annotation.comment}`}
                 >
@@ -557,7 +570,7 @@ export default function Toolbar() {
                     </div>
                   )}
                 </button>
-              )
+              );
             })}
           </div>,
           document.body
@@ -574,21 +587,25 @@ export default function Toolbar() {
             isExiting={pendingExiting}
             style={{
               left: `${pendingAnnotation.x}%`,
-              top: pendingAnnotation.clientY > window.innerHeight / 2
-                ? pendingAnnotation.clientY - 200
-                : pendingAnnotation.clientY + 30,
+              top:
+                pendingAnnotation.clientY > window.innerHeight / 2
+                  ? pendingAnnotation.clientY - 200
+                  : pendingAnnotation.clientY + 30,
             }}
           />,
           document.body
         )}
 
-      {clsDetectionActive && isActive &&
+      {clsDetectionActive &&
+        isActive &&
         createPortal(
           <div
             className={styles.shiftPanel}
             style={{
               position: 'fixed',
-              bottom: toolbarPosition ? `calc(100vh - ${toolbarPosition.y}px + 14px)` : 'calc(1.25rem + 44px + 14px)',
+              bottom: toolbarPosition
+                ? `calc(100vh - ${toolbarPosition.y}px + 14px)`
+                : 'calc(1.25rem + 44px + 14px)',
               right: toolbarPosition ? `calc(100vw - ${toolbarPosition.x}px - 257px)` : '1.25rem',
             }}
           >
@@ -621,7 +638,9 @@ export default function Toolbar() {
             <div className={styles.shiftList}>
               {filteredShifts.length === 0 ? (
                 <div className={styles.shiftListEmpty}>
-                  {shifts.length === 0 ? 'No layout shifts detected yet' : 'No shifts match the current filter'}
+                  {shifts.length === 0
+                    ? 'No layout shifts detected yet'
+                    : 'No shifts match the current filter'}
                 </div>
               ) : (
                 filteredShifts.map((shift) => (
@@ -631,8 +650,8 @@ export default function Toolbar() {
                     onClick={() => replayShift(shift)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        replayShift(shift)
+                        e.preventDefault();
+                        replayShift(shift);
                       }
                     }}
                     onMouseEnter={() => setHoveredShiftId(shift.id)}
@@ -651,12 +670,12 @@ export default function Toolbar() {
                       type="button"
                       className={styles.shiftItemReplay}
                       onClick={(e) => {
-                        e.stopPropagation()
-                        replayShift(shift)
+                        e.stopPropagation();
+                        replayShift(shift);
                       }}
                       aria-label="Replay shift"
                     >
-                      <svg viewBox="0 0 20 20" fill="none">
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                         <path d="M4 4L12 10L4 16V4Z" fill="currentColor" />
                       </svg>
                     </button>
@@ -675,18 +694,18 @@ export default function Toolbar() {
               .filter((shift) => shift.id === hoveredShiftId)
               .map((shift) => {
                 // Convert from viewport coords at capture time to current viewport coords
-                const scrollOffset = shift.scrollY - scrollY
+                const scrollOffset = shift.scrollY - scrollY;
                 return shift.sources.map((source, idx) => {
                   // Try to get current rect from the actual element if it still exists
-                  let currentRect = source.currentRect
+                  let currentRect = source.currentRect;
                   if (source.node && document.contains(source.node)) {
-                    const liveRect = source.node.getBoundingClientRect()
+                    const liveRect = source.node.getBoundingClientRect();
                     currentRect = {
                       x: liveRect.x,
                       y: liveRect.y,
                       width: liveRect.width,
                       height: liveRect.height,
-                    }
+                    };
                   }
 
                   return (
@@ -704,20 +723,24 @@ export default function Toolbar() {
                         className={`${styles.shiftHighlight} ${styles.enter}`}
                         style={{
                           left: currentRect.x,
-                          top: source.node && document.contains(source.node) ? currentRect.y : currentRect.y + scrollOffset,
+                          top:
+                            source.node && document.contains(source.node)
+                              ? currentRect.y
+                              : currentRect.y + scrollOffset,
                           width: currentRect.width,
                           height: currentRect.height,
                         }}
                       />
                     </div>
-                  )
-                })
+                  );
+                });
               })}
           </div>,
           document.body
         )}
 
-      {a11yAuditActive && isActive &&
+      {a11yAuditActive &&
+        isActive &&
         createPortal(
           <AccessibilityPanel
             issues={a11yIssues}
@@ -737,21 +760,25 @@ export default function Toolbar() {
             onFilterChange={a11ySetActiveFilter}
             style={{
               position: 'fixed',
-              bottom: toolbarPosition ? `calc(100vh - ${toolbarPosition.y}px + 14px)` : 'calc(1.25rem + 44px + 14px)',
+              bottom: toolbarPosition
+                ? `calc(100vh - ${toolbarPosition.y}px + 14px)`
+                : 'calc(1.25rem + 44px + 14px)',
               right: toolbarPosition ? `calc(100vw - ${toolbarPosition.x}px - 297px)` : '1.25rem',
             }}
           />,
           document.body
         )}
 
-      {a11yAuditActive && isActive && a11yIssues.length > 0 &&
+      {a11yAuditActive &&
+        isActive &&
+        a11yIssues.length > 0 &&
         createPortal(
           <div className={accessibilityPanelStyles.highlightOverlay}>
             {a11yIssues.map((issue) => {
-              const element = getElement(issue)
-              if (!element) return null
-              const rect = element.getBoundingClientRect()
-              const isHovered = issue.id === highlightedIssueId
+              const element = getElement(issue);
+              if (!element) return null;
+              const rect = element.getBoundingClientRect();
+              const isHovered = issue.id === highlightedIssueId;
               return (
                 <div
                   key={issue.id}
@@ -763,13 +790,14 @@ export default function Toolbar() {
                     height: rect.height,
                   }}
                 />
-              )
+              );
             })}
           </div>,
           document.body
         )}
 
-      {screenReaderActive && isActive &&
+      {screenReaderActive &&
+        isActive &&
         createPortal(
           <ScreenReaderPreview
             nodes={srNodes}
@@ -779,7 +807,9 @@ export default function Toolbar() {
             onHighlightElement={setSrHighlightedElement}
             style={{
               position: 'fixed',
-              bottom: toolbarPosition ? `calc(100vh - ${toolbarPosition.y}px + 14px)` : 'calc(1.25rem + 44px + 14px)',
+              bottom: toolbarPosition
+                ? `calc(100vh - ${toolbarPosition.y}px + 14px)`
+                : 'calc(1.25rem + 44px + 14px)',
               right: toolbarPosition ? `calc(100vw - ${toolbarPosition.x}px - 357px)` : '1.25rem',
             }}
           />,
@@ -790,7 +820,7 @@ export default function Toolbar() {
         createPortal(
           <div className={accessibilityPanelStyles.highlightOverlay}>
             {(() => {
-              const rect = srHighlightedElement.getBoundingClientRect()
+              const rect = srHighlightedElement.getBoundingClientRect();
               return (
                 <div
                   className={`${accessibilityPanelStyles.highlight} ${accessibilityPanelStyles.minor} ${accessibilityPanelStyles.hovered}`}
@@ -801,7 +831,7 @@ export default function Toolbar() {
                     height: rect.height,
                   }}
                 />
-              )
+              );
             })()}
           </div>,
           document.body
@@ -833,9 +863,19 @@ export default function Toolbar() {
           } ${isDragging ? styles.dragging : ''}`}
           onMouseDown={handleToolbarMouseDown}
           onClick={!isActive ? handleToggle : undefined}
-          role={!isActive ? 'button' : undefined}
-          tabIndex={!isActive ? 0 : undefined}
-          aria-label={!isActive ? 'Open toolbar' : undefined}
+          onKeyDown={
+            !isActive
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleToggle();
+                  }
+                }
+              : undefined
+          }
+          role={!isActive ? 'button' : 'toolbar'}
+          tabIndex={!isActive ? 0 : -1}
+          aria-label={!isActive ? 'Open toolbar' : 'Developer toolbar'}
         >
           <div className={`${styles.controlsContent} ${isActive ? styles.visible : styles.hidden}`}>
             <div className={styles.buttonWrapper}>
@@ -843,8 +883,8 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  toggleSelecting()
+                  e.stopPropagation();
+                  toggleSelecting();
                 }}
                 data-active={isSelecting}
                 aria-label="Select element"
@@ -868,8 +908,8 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  toggleMarkers()
+                  e.stopPropagation();
+                  toggleMarkers();
                 }}
                 data-active={showMarkers}
                 disabled={annotations.length === 0}
@@ -891,12 +931,21 @@ export default function Toolbar() {
                         strokeLinecap="round"
                         fill="none"
                       />
-                      <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="3"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        fill="none"
+                      />
                     </>
                   )}
                 </svg>
               </button>
-              <div className={styles.buttonTooltip}>{showMarkers ? 'Hide Markers' : 'Show Markers'}</div>
+              <div className={styles.buttonTooltip}>
+                {showMarkers ? 'Hide Markers' : 'Show Markers'}
+              </div>
             </div>
 
             <div className={styles.buttonWrapper}>
@@ -904,8 +953,8 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  toggleAnimations()
+                  e.stopPropagation();
+                  toggleAnimations();
                 }}
                 data-active={animationsPaused}
                 aria-label={animationsPaused ? 'Resume animations' : 'Pause animations'}
@@ -913,10 +962,7 @@ export default function Toolbar() {
               >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   {animationsPaused ? (
-                    <path
-                      d="M6 4L16 10L6 16V4Z"
-                      fill="currentColor"
-                    />
+                    <path d="M6 4L16 10L6 16V4Z" fill="currentColor" />
                   ) : (
                     <>
                       <rect x="5" y="4" width="3" height="12" rx="1" fill="currentColor" />
@@ -925,7 +971,9 @@ export default function Toolbar() {
                   )}
                 </svg>
               </button>
-              <div className={styles.buttonTooltip}>{animationsPaused ? 'Resume Animations' : 'Pause Animations'}</div>
+              <div className={styles.buttonTooltip}>
+                {animationsPaused ? 'Resume Animations' : 'Pause Animations'}
+              </div>
             </div>
 
             <div className={styles.buttonWrapper}>
@@ -935,13 +983,40 @@ export default function Toolbar() {
                 onClick={handleClsButtonClick}
                 data-active={clsDetectionActive}
                 disabled={!clsSupported}
-                aria-label={clsDetectionActive ? 'Stop detecting layout shifts' : 'Detect layout shifts'}
+                aria-label={
+                  clsDetectionActive ? 'Stop detecting layout shifts' : 'Detect layout shifts'
+                }
                 aria-pressed={clsDetectionActive}
               >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <rect x="3" y="4" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <rect x="11" y="11" width="6" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <path d="M6 9L6 13L11 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2" />
+                  <rect
+                    x="3"
+                    y="4"
+                    width="6"
+                    height="5"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <rect
+                    x="11"
+                    y="11"
+                    width="6"
+                    height="5"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M6 9L6 13L11 13"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="2 2"
+                  />
                 </svg>
               </button>
               <div className={styles.buttonTooltip}>
@@ -954,16 +1029,23 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  setActiveMode(activeMode === 'a11y' ? null : 'a11y')
+                  e.stopPropagation();
+                  setActiveMode(activeMode === 'a11y' ? null : 'a11y');
                 }}
                 data-active={a11yAuditActive}
-                aria-label={a11yAuditActive ? 'Close accessibility audit' : 'Open accessibility audit'}
+                aria-label={
+                  a11yAuditActive ? 'Close accessibility audit' : 'Open accessibility audit'
+                }
                 aria-pressed={a11yAuditActive}
               >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <circle cx="10" cy="4" r="2" fill="currentColor" />
-                  <path d="M10 8V14M10 14L7 18M10 14L13 18M4 10H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path
+                    d="M10 8V14M10 14L7 18M10 14L13 18M4 10H16"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
               <div className={styles.buttonTooltip}>Accessibility</div>
@@ -974,19 +1056,48 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  setActiveMode(activeMode === 'screenReader' ? null : 'screenReader')
+                  e.stopPropagation();
+                  setActiveMode(activeMode === 'screenReader' ? null : 'screenReader');
                 }}
                 data-active={screenReaderActive}
-                aria-label={screenReaderActive ? 'Close screen reader preview' : 'Open screen reader preview'}
+                aria-label={
+                  screenReaderActive ? 'Close screen reader preview' : 'Open screen reader preview'
+                }
                 aria-pressed={screenReaderActive}
               >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V12C17 13.1046 16.1046 14 15 14H5C3.89543 14 3 13.1046 3 12V5Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <path d="M7 17H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M10 14V17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="10" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <path d="M6 11C6 11 7 9 10 9C13 9 14 11 14 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path
+                    d="M3 5C3 3.89543 3.89543 3 5 3H15C16.1046 3 17 3.89543 17 5V12C17 13.1046 16.1046 14 15 14H5C3.89543 14 3 13.1046 3 12V5Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M7 17H13"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M10 14V17"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <circle
+                    cx="10"
+                    cy="8"
+                    r="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M6 11C6 11 7 9 10 9C13 9 14 11 14 11"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
               <div className={styles.buttonTooltip}>Screen Reader</div>
@@ -997,8 +1108,8 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  clearAll()
+                  e.stopPropagation();
+                  clearAll();
                 }}
                 disabled={annotations.length === 0}
                 data-danger
@@ -1025,8 +1136,8 @@ export default function Toolbar() {
                 type="button"
                 className={styles.controlButton}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  handleToggle()
+                  e.stopPropagation();
+                  handleToggle();
                 }}
                 data-danger
                 aria-label="Close toolbar"
@@ -1055,5 +1166,5 @@ export default function Toolbar() {
         </div>
       </div>
     </>
-  )
+  );
 }

@@ -26,7 +26,8 @@
       "a11y": {
         "noStaticElementInteractions": "warn",
         "useAriaPropsSupportedByRole": "warn",
-        "useKeyWithClickEvents": "warn"
+        "useKeyWithClickEvents": "warn",
+        "useSemanticElements": "warn"
       }
     }
   },

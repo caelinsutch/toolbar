@@ -1,42 +1,46 @@
-import { useState, useMemo } from 'react'
-import type { AccessibilityIssue, AccessibilityImpact, RecordedAccessibilityState } from '@toolbar/types'
-import styles from './accessibility-panel.module.scss'
+import { useMemo, useState } from 'react';
+import type {
+  AccessibilityImpact,
+  AccessibilityIssue,
+  RecordedAccessibilityState,
+} from '../../types';
+import styles from './accessibility-panel.module.scss';
 
 interface AccessibilityAuditSummary {
-  critical: number
-  serious: number
-  moderate: number
-  minor: number
-  total: number
+  critical: number;
+  serious: number;
+  moderate: number;
+  minor: number;
+  total: number;
 }
 
 interface AccessibilityPanelProps {
-  issues: AccessibilityIssue[]
-  summary: AccessibilityAuditSummary
-  isRunning: boolean
-  onRunAudit: () => void
-  onClearIssues: () => void
-  onHoverIssue: (issue: AccessibilityIssue) => void
-  onLeaveIssue: () => void
-  onClickIssue: (issue: AccessibilityIssue) => void
-  isRecording: boolean
-  recordedStates: RecordedAccessibilityState[]
-  onStartRecording: () => void
-  onStopRecording: () => void
-  onCaptureState: () => void
-  activeFilter: AccessibilityImpact | 'all'
-  onFilterChange: (filter: AccessibilityImpact | 'all') => void
-  style?: React.CSSProperties
+  issues: AccessibilityIssue[];
+  summary: AccessibilityAuditSummary;
+  isRunning: boolean;
+  onRunAudit: () => void;
+  onClearIssues: () => void;
+  onHoverIssue: (issue: AccessibilityIssue) => void;
+  onLeaveIssue: () => void;
+  onClickIssue: (issue: AccessibilityIssue) => void;
+  isRecording: boolean;
+  recordedStates: RecordedAccessibilityState[];
+  onStartRecording: () => void;
+  onStopRecording: () => void;
+  onCaptureState: () => void;
+  activeFilter: AccessibilityImpact | 'all';
+  onFilterChange: (filter: AccessibilityImpact | 'all') => void;
+  style?: React.CSSProperties;
 }
 
-const IMPACT_ORDER: AccessibilityImpact[] = ['critical', 'serious', 'moderate', 'minor']
+const IMPACT_ORDER: AccessibilityImpact[] = ['critical', 'serious', 'moderate', 'minor'];
 
 const IMPACT_LABELS: Record<AccessibilityImpact, string> = {
   critical: 'Critical',
   serious: 'Serious',
   moderate: 'Moderate',
   minor: 'Minor',
-}
+};
 
 export function AccessibilityPanel({
   issues,
@@ -56,16 +60,16 @@ export function AccessibilityPanel({
   onFilterChange,
   style,
 }: AccessibilityPanelProps) {
-  const [selectedStateId, setSelectedStateId] = useState<string | null>(null)
+  const [selectedStateId, setSelectedStateId] = useState<string | null>(null);
 
   const filteredIssues = useMemo(() => {
     const sourceIssues = selectedStateId
-      ? recordedStates.find(s => s.id === selectedStateId)?.issues || []
-      : issues
+      ? recordedStates.find((s) => s.id === selectedStateId)?.issues || []
+      : issues;
 
-    if (activeFilter === 'all') return sourceIssues
-    return sourceIssues.filter(issue => issue.impact === activeFilter)
-  }, [issues, activeFilter, selectedStateId, recordedStates])
+    if (activeFilter === 'all') return sourceIssues;
+    return sourceIssues.filter((issue) => issue.impact === activeFilter);
+  }, [issues, activeFilter, selectedStateId, recordedStates]);
 
   const groupedIssues = useMemo(() => {
     const groups: Record<AccessibilityImpact, AccessibilityIssue[]> = {
@@ -73,20 +77,20 @@ export function AccessibilityPanel({
       serious: [],
       moderate: [],
       minor: [],
-    }
+    };
 
     for (const issue of filteredIssues) {
-      groups[issue.impact].push(issue)
+      groups[issue.impact].push(issue);
     }
 
-    return groups
-  }, [filteredIssues])
+    return groups;
+  }, [filteredIssues]);
 
   const getBadgeClass = () => {
-    if (summary.critical > 0) return styles.hasCritical
-    if (summary.serious > 0) return styles.hasSerious
-    return ''
-  }
+    if (summary.critical > 0) return styles.hasCritical;
+    if (summary.serious > 0) return styles.hasSerious;
+    return '';
+  };
 
   return (
     <div className={styles.panel} style={style}>
@@ -163,11 +167,7 @@ export function AccessibilityPanel({
             <span className={styles.recordingDot} />
             Recording
           </div>
-          <button
-            type="button"
-            className={styles.captureButton}
-            onClick={onCaptureState}
-          >
+          <button type="button" className={styles.captureButton} onClick={onCaptureState}>
             <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" fill="none" />
               <circle cx="8" cy="8" r="3" fill="currentColor" />
@@ -189,8 +189,8 @@ export function AccessibilityPanel({
               onClick={() => setSelectedStateId(selectedStateId === state.id ? null : state.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  setSelectedStateId(selectedStateId === state.id ? null : state.id)
+                  e.preventDefault();
+                  setSelectedStateId(selectedStateId === state.id ? null : state.id);
                 }
               }}
               role="button"
@@ -206,17 +206,15 @@ export function AccessibilityPanel({
       <div className={styles.content}>
         {filteredIssues.length === 0 ? (
           <div className={styles.empty}>
-            <div className={styles.emptyIcon}>
-              {issues.length === 0 ? '🔍' : '✓'}
-            </div>
+            <div className={styles.emptyIcon}>{issues.length === 0 ? '🔍' : '✓'}</div>
             {issues.length === 0
               ? 'Click "Run Audit" to check accessibility'
               : 'No issues match the current filter'}
           </div>
         ) : (
           IMPACT_ORDER.map((impact) => {
-            const impactIssues = groupedIssues[impact]
-            if (impactIssues.length === 0) return null
+            const impactIssues = groupedIssues[impact];
+            if (impactIssues.length === 0) return null;
 
             return (
               <div key={impact} className={styles.issueGroup}>
@@ -236,8 +234,8 @@ export function AccessibilityPanel({
                     onBlur={onLeaveIssue}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        onClickIssue(issue)
+                        e.preventDefault();
+                        onClickIssue(issue);
                       }
                     }}
                     role="button"
@@ -254,8 +252,8 @@ export function AccessibilityPanel({
                       rel="noopener noreferrer"
                       className={styles.issueLink}
                       onClick={(e) => e.stopPropagation()}
-                      aria-label="View WCAG guideline"
                     >
+                      <span className={styles.srOnly}>View WCAG guideline for {issue.help}</span>
                       <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                         <path
                           d="M6 3H3V13H13V10M9 3H13V7M13 3L7 9"
@@ -269,12 +267,12 @@ export function AccessibilityPanel({
                   </div>
                 ))}
               </div>
-            )
+            );
           })
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export { styles as accessibilityPanelStyles }
+export { styles as accessibilityPanelStyles };

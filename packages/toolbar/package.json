@@ -1,0 +1,92 @@
+{
+  "name": "cloudflare-toolbar",
+  "version": "0.0.0",
+  "description": "A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, and element annotation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/index.css"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "check": "biome check .",
+    "prepublishOnly": "bun run build",
+    "release": "release-it"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "axe-core": "^4.11.1"
+  },
+  "devDependencies": {
+    "@toolbar/tsconfig": "workspace:*",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "esbuild-sass-plugin": "^3.6.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "release-it": "^19.0.4",
+    "sass": "^1.97.3",
+    "tsup": "^8.5.0",
+    "typescript": "^5"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release v${version}",
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true,
+      "releaseName": "v${version}"
+    },
+    "npm": {
+      "publish": true
+    },
+    "hooks": {
+      "before:init": [
+        "bun run lint",
+        "bun run typecheck"
+      ],
+      "after:bump": "bun run build"
+    }
+  },
+  "keywords": [
+    "react",
+    "toolbar",
+    "devtools",
+    "accessibility",
+    "a11y",
+    "cls",
+    "layout-shift",
+    "screen-reader",
+    "debugging",
+    "cloudflare"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudflare/toolbar"
+  },
+  "bugs": {
+    "url": "https://github.com/cloudflare/toolbar/issues"
+  },
+  "homepage": "https://github.com/cloudflare/toolbar#readme"
+}

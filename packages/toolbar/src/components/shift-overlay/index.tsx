@@ -1,32 +1,32 @@
-import { createPortal } from 'react-dom'
-import type { LayoutShift } from '@toolbar/types'
-import styles from './shift-overlay.module.scss'
+import { createPortal } from 'react-dom';
+import type { LayoutShift } from '../../types';
+import styles from './shift-overlay.module.scss';
 
 interface ShiftOverlayProps {
-  shift: LayoutShift
-  scrollY: number
+  shift: LayoutShift;
+  scrollY: number;
 }
 
 export function ShiftOverlay({ shift, scrollY }: ShiftOverlayProps) {
   // Convert from viewport coords at capture time to current viewport coords
-  const scrollOffset = shift.scrollY - scrollY
+  const scrollOffset = shift.scrollY - scrollY;
 
   return createPortal(
     <div className={styles.shiftOverlay}>
       {shift.sources.map((source, idx) => {
         // Try to get current rect from the actual element if it still exists
-        let currentRect = source.currentRect
-        let useScrollOffset = true
+        let currentRect = source.currentRect;
+        let useScrollOffset = true;
 
         if (source.node && document.contains(source.node)) {
-          const liveRect = source.node.getBoundingClientRect()
+          const liveRect = source.node.getBoundingClientRect();
           currentRect = {
             x: liveRect.x,
             y: liveRect.y,
             width: liveRect.width,
             height: liveRect.height,
-          }
-          useScrollOffset = false
+          };
+          useScrollOffset = false;
         }
 
         return (
@@ -50,9 +50,9 @@ export function ShiftOverlay({ shift, scrollY }: ShiftOverlayProps) {
               }}
             />
           </div>
-        )
+        );
       })}
     </div>,
     document.body
-  )
+  );
 }

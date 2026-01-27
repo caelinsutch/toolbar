@@ -1,35 +1,35 @@
-import type { LayoutShift } from '@toolbar/types'
-import type { ClsRating } from '../../hooks/use-layout-shift-detection'
-import styles from './shift-panel.module.scss'
+import type { ClsRating } from '../../hooks/use-layout-shift-detection';
+import type { LayoutShift } from '../../types';
+import styles from './shift-panel.module.scss';
 
 interface ShiftPanelProps {
-  shifts: LayoutShift[]
-  filteredShifts: LayoutShift[]
-  cumulativeCls: number
-  clsRating: ClsRating
-  filterThreshold: number
-  onFilterChange: (threshold: number) => void
-  onClearShifts: () => void
-  onReplayShift: (shift: LayoutShift) => void
-  onHoverShift: (shiftId: string | null) => void
-  style?: React.CSSProperties
+  shifts: LayoutShift[];
+  filteredShifts: LayoutShift[];
+  cumulativeCls: number;
+  clsRating: ClsRating;
+  filterThreshold: number;
+  onFilterChange: (threshold: number) => void;
+  onClearShifts: () => void;
+  onReplayShift: (shift: LayoutShift) => void;
+  onHoverShift: (shiftId: string | null) => void;
+  style?: React.CSSProperties;
 }
 
 function getClsRatingClass(rating: ClsRating): string {
   switch (rating) {
     case 'good':
-      return styles.good ?? ''
+      return styles.good ?? '';
     case 'needs-improvement':
-      return styles.needsImprovement ?? ''
+      return styles.needsImprovement ?? '';
     case 'poor':
-      return styles.poor ?? ''
+      return styles.poor ?? '';
   }
 }
 
 function formatTime(timestamp: number): string {
-  const seconds = Math.floor(timestamp / 1000)
-  const ms = Math.floor(timestamp % 1000)
-  return `${seconds}.${ms.toString().padStart(3, '0')}s`
+  const seconds = Math.floor(timestamp / 1000);
+  const ms = Math.floor(timestamp % 1000);
+  return `${seconds}.${ms.toString().padStart(3, '0')}s`;
 }
 
 export function ShiftPanel({
@@ -75,7 +75,9 @@ export function ShiftPanel({
       <div className={styles.shiftList}>
         {filteredShifts.length === 0 ? (
           <div className={styles.shiftListEmpty}>
-            {shifts.length === 0 ? 'No layout shifts detected yet' : 'No shifts match the current filter'}
+            {shifts.length === 0
+              ? 'No layout shifts detected yet'
+              : 'No shifts match the current filter'}
           </div>
         ) : (
           filteredShifts.map((shift) => (
@@ -85,8 +87,8 @@ export function ShiftPanel({
               onClick={() => onReplayShift(shift)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  onReplayShift(shift)
+                  e.preventDefault();
+                  onReplayShift(shift);
                 }
               }}
               onMouseEnter={() => onHoverShift(shift.id)}
@@ -105,12 +107,12 @@ export function ShiftPanel({
                 type="button"
                 className={styles.shiftItemReplay}
                 onClick={(e) => {
-                  e.stopPropagation()
-                  onReplayShift(shift)
+                  e.stopPropagation();
+                  onReplayShift(shift);
                 }}
                 aria-label="Replay shift"
               >
-                <svg viewBox="0 0 20 20" fill="none">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path d="M4 4L12 10L4 16V4Z" fill="currentColor" />
                 </svg>
               </button>
@@ -119,5 +121,5 @@ export function ShiftPanel({
         )}
       </div>
     </div>
-  )
+  );
 }
