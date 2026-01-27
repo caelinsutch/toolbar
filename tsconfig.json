@@ -3,7 +3,8 @@
     "baseUrl": "."
   },
   "references": [
-    { "path": "./apps/toolbar" },
+    { "path": "./apps/web" },
+    { "path": "./packages/toolbar" },
     { "path": "./packages/types" }
   ],
   "exclude": ["node_modules", "apps", "packages"]

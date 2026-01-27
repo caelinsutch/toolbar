@@ -1,36 +1,82 @@
-# Cloudflare Toolbar
+# cloudflare-toolbar
 
-A floating annotation toolbar inspired by agentation's clean design.
+A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, and element annotation.
+
+## Installation
+
+```bash
+npm install cloudflare-toolbar
+# or
+bun add cloudflare-toolbar
+```
+
+## Usage
+
+Import and render the `Toolbar` component anywhere in your React application:
+
+```tsx
+import { Toolbar } from 'cloudflare-toolbar'
+
+function App() {
+  return (
+    <div>
+      <h1>My Application</h1>
+      {/* Your app content */}
+      
+      {/* Add the toolbar - it will float in the corner */}
+      <Toolbar />
+    </div>
+  )
+}
+```
+
+The toolbar appears as a floating button in the bottom-right corner. Click to expand and access all features.
 
 ## Features
 
-- **Floating draggable toolbar** - Position the toolbar anywhere on your screen
-- **Element selection and annotation** - Select and annotate page elements
-- **Numbered markers with tooltips** - Visual markers with informative tooltips
-- **Animation pause/play control** - Control animation playback
-- **Smooth animations with clip-path transitions** - Polished UI transitions
+- **Element Selection & Annotation** - Click elements to add comments and annotations
+- **Accessibility Audits** - Built-in axe-core integration for WCAG testing
+- **Layout Shift Detection (CLS)** - Real-time Cumulative Layout Shift monitoring
+- **Screen Reader Preview** - See how screen readers announce your content
+- **Animation Controls** - Pause/resume CSS animations for debugging
 
-## Getting Started
+## Development
+
+This is a Turborepo monorepo.
 
 ### Prerequisites
 
 - [Bun](https://bun.sh/)
 
-### Installation
+### Setup
 
 ```bash
 bun install
 ```
 
-### Run Development Server
+### Commands
 
 ```bash
-bun run dev
+bun run dev        # Start development servers
+bun run build      # Build all packages
+bun run typecheck  # Run type checking
+bun run lint       # Lint all packages
 ```
 
-## Tech Stack
+### Structure
 
-- React
-- TypeScript
-- Vite
-- SCSS Modules
+```
+├── apps/
+│   └── web/              # Demo app (Vite + React)
+└── packages/
+    ├── toolbar/          # Main library (cloudflare-toolbar)
+    └── types/            # Shared TypeScript types
+```
+
+## Requirements
+
+- React 18+
+
+## License
+
+MIT

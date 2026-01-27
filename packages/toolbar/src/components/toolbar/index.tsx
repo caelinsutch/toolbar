@@ -20,6 +20,8 @@ type HoverInfo = {
   element: string;
   elementPath: string;
   rect: DOMRect | null;
+  reactComponent: string | null;
+  reactHierarchy: string[];
 };
 
 type PendingAnnotation = {
@@ -33,6 +35,8 @@ type PendingAnnotation = {
   nearbyText?: string;
   cssClasses?: string;
   isFixed?: boolean;
+  reactComponent?: string | null;
+  reactHierarchy?: string[];
 };
 
 function isElementFixed(element: HTMLElement): boolean {
@@ -231,9 +235,9 @@ export default function Toolbar() {
         setHoverInfo(null);
         return;
       }
-      const { name, path } = identifyElement(elementUnder);
+      const { name, path, reactComponent, reactHierarchy } = identifyElement(elementUnder);
       const rect = elementUnder.getBoundingClientRect();
-      setHoverInfo({ element: name, elementPath: path, rect });
+      setHoverInfo({ element: name, elementPath: path, rect, reactComponent, reactHierarchy });
       setHoverPosition({ x: e.clientX, y: e.clientY });
     };
     document.addEventListener('mousemove', handleMouseMove);
@@ -259,7 +263,7 @@ export default function Toolbar() {
       const elementUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
       if (!elementUnder) return;
 
-      const { name, path } = identifyElement(elementUnder);
+      const { name, path, reactComponent, reactHierarchy } = identifyElement(elementUnder);
       const rect = elementUnder.getBoundingClientRect();
       const x = (e.clientX / window.innerWidth) * 100;
       const isFixed = isElementFixed(elementUnder);
@@ -287,6 +291,8 @@ export default function Toolbar() {
         nearbyText: getNearbyText(elementUnder),
         cssClasses: getElementClasses(elementUnder),
         isFixed,
+        reactComponent,
+        reactHierarchy,
       });
       setHoverInfo(null);
     };
@@ -505,6 +511,18 @@ export default function Toolbar() {
                   }}
                 >
                   {hoverInfo.element}
+                  {hoverInfo.reactComponent && (
+                    <span className={styles.reactComponent}>
+                      {' '}
+                      &lt;{hoverInfo.reactComponent}&gt;
+                    </span>
+                  )}
+                  {hoverInfo.reactHierarchy.length > 1 && (
+                    <span className={styles.reactHierarchy}>
+                      {' '}
+                      in {hoverInfo.reactHierarchy.slice(1, 3).join(' → ')}
+                    </span>
+                  )}
                 </div>
               </>
             )}

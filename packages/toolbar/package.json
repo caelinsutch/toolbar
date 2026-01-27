@@ -34,13 +34,16 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "axe-core": "^4.11.1"
+    "axe-core": "^4.11.1",
+    "bippy": "^0.5.0"
   },
   "devDependencies": {
     "@toolbar/tsconfig": "workspace:*",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
+    "bippy": "^0.5.28",
     "esbuild-sass-plugin": "^3.6.0",
+    "postcss-modules": "^6.0.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "release-it": "^19.0.4",

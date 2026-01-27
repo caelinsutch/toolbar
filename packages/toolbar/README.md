@@ -1,43 +1,73 @@
 # cloudflare-toolbar
 
-A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, and element annotation.
+A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, React component detection, and element annotation.
 
 ## Installation
 
 ```bash
-npm install cloudflare-toolbar
+npm install cloudflare-toolbar bippy
 # or
-bun add cloudflare-toolbar
+bun add cloudflare-toolbar bippy
 # or
-yarn add cloudflare-toolbar
+yarn add cloudflare-toolbar bippy
 ```
 
-## Usage
+## Setup
 
-Simply import and render the `Toolbar` component anywhere in your React application:
+**Important**: For React component detection to work, `bippy` must be imported **before** React in your application entry point.
+
+### Vite / Create React App
 
 ```tsx
+// src/main.tsx or src/index.tsx
+import 'bippy'  // MUST be first!
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { Toolbar } from 'cloudflare-toolbar'
+import App from './App'
+
+createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+    <Toolbar />
+  </React.StrictMode>
+)
+```
+
+### Next.js 15.3+
+
+Create an instrumentation file in your project root or `src` folder:
+
+```ts
+// instrumentation-client.ts
+import 'bippy'
+```
+
+Then add the toolbar to your layout:
+
+```tsx
+// app/layout.tsx
 import { Toolbar } from 'cloudflare-toolbar'
 
-function App() {
+export default function RootLayout({ children }) {
   return (
-    <div>
-      <h1>My Application</h1>
-      {/* Your app content */}
-      
-      {/* Add the toolbar - it will float in the corner */}
-      <Toolbar />
-    </div>
+    <html>
+      <body>
+        {children}
+        <Toolbar />
+      </body>
+    </html>
   )
 }
 ```
 
-The toolbar will appear as a floating button in the bottom-right corner. Click to expand and access all features.
-
 ## Features
 
+### React Component Detection
+When hovering over elements, the toolbar shows the React component name and hierarchy (e.g., `<Button> in NavBar → Header`). This helps identify which components render which DOM elements.
+
 ### Element Selection & Annotation
-Click the cursor icon to enable element selection mode. Click any element to add annotations with comments.
+Click the cursor icon to enable element selection mode. Click any element to add annotations with comments. The toolbar captures both DOM info and React component context.
 
 ### Accessibility Audits
 Built-in axe-core integration for WCAG accessibility testing. Click "Run Audit" to scan your page for issues.
@@ -55,6 +85,28 @@ Pause/resume all CSS animations on the page for debugging.
 
 - React 18+
 - React DOM 18+
+- bippy (for React component detection)
+
+## API
+
+```tsx
+import { Toolbar } from 'cloudflare-toolbar'
+
+// Types are also exported
+import type {
+  Annotation,
+  LayoutShift,
+  AccessibilityIssue,
+} from 'cloudflare-toolbar'
+```
+
+## Development Only
+
+This toolbar is intended for development use. For production builds, consider conditionally rendering:
+
+```tsx
+{process.env.NODE_ENV === 'development' && <Toolbar />}
+```
 
 ## License
 

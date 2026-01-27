@@ -1,4 +1,6 @@
-import { sassPlugin } from 'esbuild-sass-plugin';
+import { sassPlugin, sassPlugin } from 'esbuild-sass-plugin';
+import postcss from 'postcss';
+import postcssModulesPlugin from 'postcss-modules';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -10,11 +12,30 @@ export default defineConfig({
   external: ['react', 'react-dom'],
   esbuildPlugins: [
     sassPlugin({
-      type: 'local-css',
+      filter: /\.module\.scss$/,
+      type: 'style',
+      async transform(source, _resolveDir, filePath) {
+        let cssModuleExports = {};
+        const { css } = await postcss([
+          postcssModulesPlugin({
+            getJSON(_cssFilename, json) {
+              cssModuleExports = json;
+            },
+          }),
+        ]).process(source, { from: filePath, map: false });
+
+        return {
+          contents: css,
+          pluginData: { exports: JSON.stringify(cssModuleExports) },
+        };
+      },
+    }),
+    sassPlugin({
+      filter: /\.scss$/,
+      type: 'style',
     }),
   ],
   esbuildOptions(options) {
     options.jsx = 'automatic';
   },
-  injectStyle: true,
 });
