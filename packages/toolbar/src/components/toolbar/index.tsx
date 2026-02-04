@@ -277,15 +277,19 @@ export default function Toolbar() {
   // Handle hint visibility with exit animation
   useEffect(() => {
     const shouldShowHint = annotations.length > 0 && isActive;
-    if (shouldShowHint && !hintVisible) {
-      setHintExiting(false);
-      setHintVisible(true);
-    } else if (!shouldShowHint && hintVisible && !hintExiting) {
+    if (shouldShowHint) {
+      // Show hint (or cancel exit if currently exiting)
+      if (!hintVisible || hintExiting) {
+        setHintExiting(false);
+        setHintVisible(true);
+      }
+    } else if (hintVisible && !hintExiting) {
+      // Start exit animation
       setHintExiting(true);
       const timer = setTimeout(() => {
         setHintVisible(false);
         setHintExiting(false);
-      }, 150);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [annotations.length, isActive, hintVisible, hintExiting]);
