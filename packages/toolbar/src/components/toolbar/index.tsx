@@ -78,6 +78,8 @@ export default function Toolbar() {
   const [exitingMarkers, setExitingMarkers] = useState<Set<string>>(new Set());
   const [isClearing, setIsClearing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [hintExiting, setHintExiting] = useState(false);
 
   const [showEntranceAnimation, setShowEntranceAnimation] = useState(false);
   const [animationsPaused, setAnimationsPaused] = useState(false);
@@ -271,6 +273,22 @@ export default function Toolbar() {
       setActiveMode(null);
     }
   }, [isActive]);
+
+  // Handle hint visibility with exit animation
+  useEffect(() => {
+    const shouldShowHint = annotations.length > 0 && isActive;
+    if (shouldShowHint && !hintVisible) {
+      setHintExiting(false);
+      setHintVisible(true);
+    } else if (!shouldShowHint && hintVisible && !hintExiting) {
+      setHintExiting(true);
+      const timer = setTimeout(() => {
+        setHintVisible(false);
+        setHintExiting(false);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [annotations.length, isActive, hintVisible, hintExiting]);
 
   useEffect(() => {
     if (!isSelecting) return;
@@ -991,8 +1009,8 @@ export default function Toolbar() {
           aria-label={!isActive ? 'Open toolbar' : 'Developer toolbar'}
         >
           <div className={`${styles.controlsContent} ${isActive ? styles.visible : styles.hidden}`}>
-            {annotations.length > 0 && (
-              <div className={styles.annotationHint}>
+            {hintVisible && (
+              <div className={`${styles.annotationHint} ${hintExiting ? styles.exit : ''}`}>
                 <span className={styles.annotationCount}>{annotations.length}</span>
                 <Kbd keys={['alt', 'C']} />
               </div>
