@@ -991,6 +991,13 @@ export default function Toolbar() {
           aria-label={!isActive ? 'Open toolbar' : 'Developer toolbar'}
         >
           <div className={`${styles.controlsContent} ${isActive ? styles.visible : styles.hidden}`}>
+            {annotations.length > 0 && (
+              <div className={styles.annotationHint}>
+                <span className={styles.annotationCount}>{annotations.length}</span>
+                <Kbd keys={['alt', 'C']} />
+              </div>
+            )}
+
             <div className={styles.buttonWrapper}>
               <button
                 type="button"
