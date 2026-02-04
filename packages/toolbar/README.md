@@ -1,15 +1,15 @@
-# cloudflare-toolbar
+# agent-feedback
 
-A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, React component detection, and element annotation.
+A floating toolbar for AI agents to annotate, inspect, and provide feedback on web pages. Features accessibility audits, layout shift detection, screen reader preview, React component detection, and element annotation.
 
 ## Installation
 
 ```bash
-npm install cloudflare-toolbar bippy
+npm install agent-feedback bippy
 # or
-bun add cloudflare-toolbar bippy
+bun add agent-feedback bippy
 # or
-yarn add cloudflare-toolbar bippy
+yarn add agent-feedback bippy
 ```
 
 ## Setup
@@ -23,7 +23,7 @@ yarn add cloudflare-toolbar bippy
 import 'bippy'  // MUST be first!
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { Toolbar } from 'cloudflare-toolbar'
+import { Toolbar } from 'agent-feedback'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(
@@ -47,7 +47,7 @@ Then add the toolbar to your layout:
 
 ```tsx
 // app/layout.tsx
-import { Toolbar } from 'cloudflare-toolbar'
+import { Toolbar } from 'agent-feedback'
 
 export default function RootLayout({ children }) {
   return (
@@ -61,13 +61,21 @@ export default function RootLayout({ children }) {
 }
 ```
 
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `⌥S` (Option+S) | Open toolbar & activate element selector |
+| `⌥C` (Option+C) | Copy all annotations to clipboard |
+| `Escape` | Close current panel or collapse toolbar |
+
 ## Features
+
+### Element Selection & Annotation
+Click the cursor icon (or press `⌥S`) to enable element selection mode. Click any element to add annotations with comments. Copy all annotations with `⌥C` for easy sharing.
 
 ### React Component Detection
 When hovering over elements, the toolbar shows the React component name and hierarchy (e.g., `<Button> in NavBar → Header`). This helps identify which components render which DOM elements.
-
-### Element Selection & Annotation
-Click the cursor icon to enable element selection mode. Click any element to add annotations with comments. The toolbar captures both DOM info and React component context.
 
 ### Accessibility Audits
 Built-in axe-core integration for WCAG accessibility testing. Click "Run Audit" to scan your page for issues.
@@ -90,22 +98,14 @@ Pause/resume all CSS animations on the page for debugging.
 ## API
 
 ```tsx
-import { Toolbar } from 'cloudflare-toolbar'
+import { Toolbar } from 'agent-feedback'
 
 // Types are also exported
 import type {
   Annotation,
   LayoutShift,
   AccessibilityIssue,
-} from 'cloudflare-toolbar'
-```
-
-## Development Only
-
-This toolbar is intended for development use. For production builds, consider conditionally rendering:
-
-```tsx
-{process.env.NODE_ENV === 'development' && <Toolbar />}
+} from 'agent-feedback'
 ```
 
 ## License

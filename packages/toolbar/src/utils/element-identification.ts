@@ -1,4 +1,4 @@
-import { getReactComponentHierarchy, getReactComponentName } from './react-fiber';
+import { getReactComponentInfo } from './react-fiber';
 
 export function getElementPath(target: HTMLElement, maxDepth = 4): string {
   const parts: string[] = [];
@@ -35,13 +35,13 @@ export function identifyElement(target: HTMLElement): {
   path: string;
   reactComponent: string | null;
   reactHierarchy: string[];
+  reactProps: Record<string, unknown> | null;
 } {
   const path = getElementPath(target);
-  const reactComponent = getReactComponentName(target);
-  const reactHierarchy = getReactComponentHierarchy(target, 5);
+  const { componentName: reactComponent, hierarchy: reactHierarchy, props: reactProps } = getReactComponentInfo(target);
 
   if (target.dataset.element) {
-    return { name: target.dataset.element, path, reactComponent, reactHierarchy };
+    return { name: target.dataset.element, path, reactComponent, reactHierarchy, reactProps };
   }
 
   const tag = target.tagName.toLowerCase();
@@ -57,10 +57,11 @@ export function identifyElement(target: HTMLElement): {
           path,
           reactComponent: reactComponent || parentResult.reactComponent,
           reactHierarchy: reactHierarchy.length > 0 ? reactHierarchy : parentResult.reactHierarchy,
+          reactProps: reactProps || parentResult.reactProps,
         };
       }
     }
-    return { name: 'graphic element', path, reactComponent, reactHierarchy };
+    return { name: 'graphic element', path, reactComponent, reactHierarchy, reactProps };
   }
   if (tag === 'svg') {
     const parent = target.parentElement;
@@ -71,37 +72,39 @@ export function identifyElement(target: HTMLElement): {
         path,
         reactComponent,
         reactHierarchy,
+        reactProps,
       };
     }
-    return { name: 'icon', path, reactComponent, reactHierarchy };
+    return { name: 'icon', path, reactComponent, reactHierarchy, reactProps };
   }
 
   if (tag === 'button') {
     const text = target.textContent?.trim();
     const ariaLabel = target.getAttribute('aria-label');
-    if (ariaLabel) return { name: `button [${ariaLabel}]`, path, reactComponent, reactHierarchy };
+    if (ariaLabel) return { name: `button [${ariaLabel}]`, path, reactComponent, reactHierarchy, reactProps };
     return {
       name: text ? `button "${text.slice(0, 25)}"` : 'button',
       path,
       reactComponent,
       reactHierarchy,
+      reactProps,
     };
   }
   if (tag === 'a') {
     const text = target.textContent?.trim();
     const href = target.getAttribute('href');
-    if (text) return { name: `link "${text.slice(0, 25)}"`, path, reactComponent, reactHierarchy };
-    if (href) return { name: `link to ${href.slice(0, 30)}`, path, reactComponent, reactHierarchy };
-    return { name: 'link', path, reactComponent, reactHierarchy };
+    if (text) return { name: `link "${text.slice(0, 25)}"`, path, reactComponent, reactHierarchy, reactProps };
+    if (href) return { name: `link to ${href.slice(0, 30)}`, path, reactComponent, reactHierarchy, reactProps };
+    return { name: 'link', path, reactComponent, reactHierarchy, reactProps };
   }
   if (tag === 'input') {
     const type = target.getAttribute('type') || 'text';
     const placeholder = target.getAttribute('placeholder');
     const name = target.getAttribute('name');
     if (placeholder)
-      return { name: `input "${placeholder}"`, path, reactComponent, reactHierarchy };
-    if (name) return { name: `input [${name}]`, path, reactComponent, reactHierarchy };
-    return { name: `${type} input`, path, reactComponent, reactHierarchy };
+      return { name: `input "${placeholder}"`, path, reactComponent, reactHierarchy, reactProps };
+    if (name) return { name: `input [${name}]`, path, reactComponent, reactHierarchy, reactProps };
+    return { name: `${type} input`, path, reactComponent, reactHierarchy, reactProps };
   }
 
   if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
@@ -111,6 +114,7 @@ export function identifyElement(target: HTMLElement): {
       path,
       reactComponent,
       reactHierarchy,
+      reactProps,
     };
   }
 
@@ -122,20 +126,21 @@ export function identifyElement(target: HTMLElement): {
         path,
         reactComponent,
         reactHierarchy,
+        reactProps,
       };
-    return { name: 'paragraph', path, reactComponent, reactHierarchy };
+    return { name: 'paragraph', path, reactComponent, reactHierarchy, reactProps };
   }
   if (tag === 'span' || tag === 'label') {
     const text = target.textContent?.trim();
     if (text && text.length < 40)
-      return { name: `"${text}"`, path, reactComponent, reactHierarchy };
-    return { name: tag, path, reactComponent, reactHierarchy };
+      return { name: `"${text}"`, path, reactComponent, reactHierarchy, reactProps };
+    return { name: tag, path, reactComponent, reactHierarchy, reactProps };
   }
   if (tag === 'li') {
     const text = target.textContent?.trim();
     if (text && text.length < 40)
-      return { name: `list item: "${text.slice(0, 35)}"`, path, reactComponent, reactHierarchy };
-    return { name: 'list item', path, reactComponent, reactHierarchy };
+      return { name: `list item: "${text.slice(0, 35)}"`, path, reactComponent, reactHierarchy, reactProps };
+    return { name: 'list item', path, reactComponent, reactHierarchy, reactProps };
   }
 
   if (tag === 'img') {
@@ -145,17 +150,18 @@ export function identifyElement(target: HTMLElement): {
       path,
       reactComponent,
       reactHierarchy,
+      reactProps,
     };
   }
-  if (tag === 'video') return { name: 'video', path, reactComponent, reactHierarchy };
+  if (tag === 'video') return { name: 'video', path, reactComponent, reactHierarchy, reactProps };
 
   if (['div', 'section', 'article', 'nav', 'header', 'footer', 'aside', 'main'].includes(tag)) {
     const className = target.className;
     const role = target.getAttribute('role');
     const ariaLabel = target.getAttribute('aria-label');
 
-    if (ariaLabel) return { name: `${tag} [${ariaLabel}]`, path, reactComponent, reactHierarchy };
-    if (role) return { name: `${role}`, path, reactComponent, reactHierarchy };
+    if (ariaLabel) return { name: `${tag} [${ariaLabel}]`, path, reactComponent, reactHierarchy, reactProps };
+    if (role) return { name: `${role}`, path, reactComponent, reactHierarchy, reactProps };
 
     if (typeof className === 'string' && className) {
       const words = className
@@ -163,13 +169,13 @@ export function identifyElement(target: HTMLElement): {
         .map((c) => c.replace(/[A-Z0-9]{5,}.*$/, ''))
         .filter((c) => c.length > 2 && !/^[a-z]{1,2}$/.test(c))
         .slice(0, 2);
-      if (words.length > 0) return { name: words.join(' '), path, reactComponent, reactHierarchy };
+      if (words.length > 0) return { name: words.join(' '), path, reactComponent, reactHierarchy, reactProps };
     }
 
-    return { name: tag === 'div' ? 'container' : tag, path, reactComponent, reactHierarchy };
+    return { name: tag === 'div' ? 'container' : tag, path, reactComponent, reactHierarchy, reactProps };
   }
 
-  return { name: tag, path, reactComponent, reactHierarchy };
+  return { name: tag, path, reactComponent, reactHierarchy, reactProps };
 }
 
 export function getNearbyText(element: HTMLElement): string {
