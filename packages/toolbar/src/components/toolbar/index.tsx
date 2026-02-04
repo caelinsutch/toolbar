@@ -11,6 +11,7 @@ import {
 } from '../../utils/element-identification';
 import { AccessibilityPanel, accessibilityPanelStyles } from '../accessibility-panel';
 import { AnnotationPopup, type AnnotationPopupHandle } from '../annotation-popup';
+import { Kbd } from '../kbd';
 import { ScreenReaderPreview } from '../screen-reader-preview';
 import styles from './toolbar.module.scss';
 
@@ -22,6 +23,7 @@ type HoverInfo = {
   rect: DOMRect | null;
   reactComponent: string | null;
   reactHierarchy: string[];
+  reactProps: Record<string, unknown> | null;
 };
 
 type PendingAnnotation = {
@@ -38,6 +40,16 @@ type PendingAnnotation = {
   reactComponent?: string | null;
   reactHierarchy?: string[];
 };
+
+function formatPropValue(value: unknown): string {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'string') return `"${value.slice(0, 20)}${value.length > 20 ? '…' : ''}"`;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return `[${value.length}]`;
+  if (typeof value === 'object') return '{…}';
+  return String(value);
+}
 
 function isElementFixed(element: HTMLElement): boolean {
   let current: HTMLElement | null = element;
@@ -134,6 +146,71 @@ export default function Toolbar() {
   const clsDetectionActive = activeMode === 'cls';
   const a11yAuditActive = activeMode === 'a11y';
   const screenReaderActive = activeMode === 'screenReader';
+
+  // Copy annotations to clipboard
+  const copyAnnotationsToClipboard = useCallback(() => {
+    if (annotations.length === 0) return;
+
+    const text = annotations
+      .map((a, i) => {
+        const lines = [`${i + 1}. ${a.element}`];
+        if (a.selectedText) lines.push(`   Selected: "${a.selectedText}"`);
+        lines.push(`   Comment: ${a.comment}`);
+        if (a.elementPath) lines.push(`   Path: ${a.elementPath}`);
+        return lines.join('\n');
+      })
+      .join('\n\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+      // Could add a toast notification here in the future
+      console.log('Annotations copied to clipboard');
+    });
+  }, [annotations]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Use e.code for Alt shortcuts (Alt+key produces special chars on Mac)
+      // Alt+S - Toggle selector (opens toolbar if closed)
+      if (e.code === 'KeyS' && e.altKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        if (!isActive) {
+          setIsActive(true);
+          setActiveMode('select');
+        } else {
+          setActiveMode(activeMode === 'select' ? null : 'select');
+        }
+      }
+
+      // Alt+C - Copy annotations to clipboard (when toolbar is active)
+      if (e.code === 'KeyC' && e.altKey && !e.metaKey && !e.ctrlKey && isActive) {
+        e.preventDefault();
+        copyAnnotationsToClipboard();
+      }
+
+      // Escape - Close toolbar or cancel current mode
+      if (e.key === 'Escape' && isActive) {
+        if (activeMode) {
+          setActiveMode(null);
+        } else {
+          setIsActive(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isActive, activeMode, copyAnnotationsToClipboard]);
 
   useEffect(() => {
     if (!hasPlayedEntranceAnimation) {
@@ -235,9 +312,9 @@ export default function Toolbar() {
         setHoverInfo(null);
         return;
       }
-      const { name, path, reactComponent, reactHierarchy } = identifyElement(elementUnder);
+      const { name, path, reactComponent, reactHierarchy, reactProps } = identifyElement(elementUnder);
       const rect = elementUnder.getBoundingClientRect();
-      setHoverInfo({ element: name, elementPath: path, rect, reactComponent, reactHierarchy });
+      setHoverInfo({ element: name, elementPath: path, rect, reactComponent, reactHierarchy, reactProps });
       setHoverPosition({ x: e.clientX, y: e.clientY });
     };
     document.addEventListener('mousemove', handleMouseMove);
@@ -510,18 +587,36 @@ export default function Toolbar() {
                     top: hoverPosition.y + 20,
                   }}
                 >
-                  {hoverInfo.element}
-                  {hoverInfo.reactComponent && (
-                    <span className={styles.reactComponent}>
-                      {' '}
-                      &lt;{hoverInfo.reactComponent}&gt;
-                    </span>
-                  )}
-                  {hoverInfo.reactHierarchy.length > 1 && (
-                    <span className={styles.reactHierarchy}>
-                      {' '}
-                      in {hoverInfo.reactHierarchy.slice(1, 3).join(' → ')}
-                    </span>
+                  <div className={styles.hoverTooltipMain}>
+                    {hoverInfo.element}
+                    {hoverInfo.reactComponent && (
+                      <span className={styles.reactComponent}>
+                        {' '}
+                        &lt;{hoverInfo.reactComponent}&gt;
+                      </span>
+                    )}
+                    {hoverInfo.reactHierarchy.length > 1 && (
+                      <span className={styles.reactHierarchy}>
+                        {' '}
+                        in {hoverInfo.reactHierarchy.slice(1, 3).join(' → ')}
+                      </span>
+                    )}
+                  </div>
+                  {hoverInfo.reactProps && Object.keys(hoverInfo.reactProps).length > 0 && (
+                    <div className={styles.hoverTooltipProps}>
+                      {Object.entries(hoverInfo.reactProps).slice(0, 5).map(([key, value]) => (
+                        <span key={key} className={styles.propItem}>
+                          <span className={styles.propKey}>{key}</span>
+                          <span className={styles.propEquals}>=</span>
+                          <span className={styles.propValue}>{formatPropValue(value)}</span>
+                        </span>
+                      ))}
+                      {Object.keys(hoverInfo.reactProps).length > 5 && (
+                        <span className={styles.propMore}>
+                          +{Object.keys(hoverInfo.reactProps).length - 5} more
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </>
@@ -918,7 +1013,9 @@ export default function Toolbar() {
                   />
                 </svg>
               </button>
-              <div className={styles.buttonTooltip}>Select Element</div>
+              <div className={styles.buttonTooltip}>
+                Select Element <Kbd keys={['alt', 'S']} />
+              </div>
             </div>
 
             <div className={styles.buttonWrapper}>
@@ -1119,6 +1216,41 @@ export default function Toolbar() {
                 </svg>
               </button>
               <div className={styles.buttonTooltip}>Screen Reader</div>
+            </div>
+
+            <div className={styles.buttonWrapper}>
+              <button
+                type="button"
+                className={styles.controlButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyAnnotationsToClipboard();
+                }}
+                disabled={annotations.length === 0}
+                aria-label="Copy annotations to clipboard"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <rect
+                    x="6"
+                    y="6"
+                    width="10"
+                    height="12"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M6 8V4C6 3.44772 6.44772 3 7 3H13C13.5523 3 14 3.44772 14 4V6"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                </svg>
+              </button>
+              <div className={styles.buttonTooltip}>
+                Copy <Kbd keys={['alt', 'C']} />
+              </div>
             </div>
 
             <div className={styles.buttonWrapper}>

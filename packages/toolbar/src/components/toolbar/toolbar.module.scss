@@ -154,7 +154,7 @@ $green: #34c759;
 
   &.expanded {
     padding: 0.375rem;
-    clip-path: inset(-100px -20px 0 -20px round 22px);
+    clip-path: inset(-100px -80px 0 -80px round 22px);
   }
 }
 
@@ -362,18 +362,57 @@ $green: #34c759;
   font-size: 0.6875rem;
   font-weight: 500;
   color: #fff;
-  background: rgba(0, 0, 0, 0.85);
-  padding: 0.35rem 0.6rem;
-  border-radius: 0.375rem;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
   pointer-events: none !important;
-  white-space: nowrap;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 320px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
   &.enter {
     animation: hoverTooltipIn 0.1s ease-out forwards;
   }
+}
+
+.hoverTooltipMain {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hoverTooltipProps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.625rem;
+}
+
+.propItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.propKey {
+  color: #ffa94d;
+}
+
+.propEquals {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.propValue {
+  color: #69db7c;
+}
+
+.propMore {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
 }
 
 .reactComponent {
