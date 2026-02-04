@@ -1,4 +1,4 @@
-import { Toolbar } from 'cloudflare-toolbar';
+import { Toolbar } from 'agent-feedback';
 import { type ReactNode, useState } from 'react';
 
 function Header() {

@@ -1,7 +1,7 @@
 {
-  "name": "cloudflare-toolbar",
-  "version": "0.0.0",
-  "description": "A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, and element annotation",
+  "name": "agent-feedback",
+  "version": "0.1.0",
+  "description": "A floating toolbar for AI agents to annotate, inspect, and provide feedback on web pages",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -74,22 +74,21 @@
   "keywords": [
     "react",
     "toolbar",
-    "devtools",
+    "ai-agent",
+    "feedback",
+    "annotation",
     "accessibility",
     "a11y",
-    "cls",
-    "layout-shift",
-    "screen-reader",
-    "debugging",
-    "cloudflare"
+    "inspector",
+    "devtools"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cloudflare/toolbar"
+    "url": "https://github.com/caelinsutch/agent-feedback"
   },
   "bugs": {
-    "url": "https://github.com/cloudflare/toolbar/issues"
+    "url": "https://github.com/caelinsutch/agent-feedback/issues"
   },
-  "homepage": "https://github.com/cloudflare/toolbar#readme"
+  "homepage": "https://github.com/caelinsutch/agent-feedback#readme"
 }

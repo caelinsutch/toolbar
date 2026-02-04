@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "cloudflare-toolbar": "workspace:*"
+    "agent-feedback": "workspace:*"
   },
   "devDependencies": {
     "@toolbar/tsconfig": "workspace:*",
