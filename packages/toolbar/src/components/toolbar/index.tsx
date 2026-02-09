@@ -1378,12 +1378,8 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
                 </svg>
               </button>
               <div
-                className={styles.buttonTooltip}
+                className={`${styles.buttonTooltip} ${annotations.length > 0 ? styles.clickableTooltip : ''}`}
                 onClick={() => copyAnnotationsToClipboard()}
-                style={{
-                  pointerEvents: annotations.length > 0 ? 'auto' : 'none',
-                  cursor: annotations.length > 0 ? 'pointer' : 'default',
-                }}
               >
                 Copy <Kbd keys={['alt', 'C']} />
               </div>
