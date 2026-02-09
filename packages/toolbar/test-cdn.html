@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Feedback - CDN Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #333; }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .page-button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .page-button:hover { background: #0055aa; }
+  </style>
+</head>
+<body>
+  <h1>Agent Feedback CDN Test</h1>
+  <p>Testing the toolbar loaded from unpkg CDN.</p>
+
+  <div class="card">
+    <h2>Sample Card</h2>
+    <p>This is a sample card component that can be inspected with the toolbar.</p>
+    <button class="page-button">Click Me</button>
+  </div>
+
+  <div class="card">
+    <h2>Another Section</h2>
+    <p>The toolbar should appear in the bottom-right corner.</p>
+  </div>
+
+  <!-- Load from unpkg CDN -->
+  <script src="https://unpkg.com/agent-feedback@0.1.2/dist/cdn.global.js"></script>
+</body>
+</html>

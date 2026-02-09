@@ -4,6 +4,40 @@ A floating toolbar for AI agents to annotate, inspect, and provide feedback on w
 
 ## Installation
 
+### CDN / Script Tag (Easiest)
+
+Add a single script tag to any page - no build step required. React is bundled, so no dependencies needed:
+
+```html
+<script src="https://unpkg.com/agent-feedback/dist/cdn.global.js"></script>
+```
+
+Or via jsDelivr:
+```html
+<script src="https://cdn.jsdelivr.net/npm/agent-feedback/dist/cdn.global.js"></script>
+```
+
+The toolbar auto-mounts when the page loads and appears in the bottom-right corner. The styles are isolated so they won't conflict with your page's CSS.
+
+**Optional: Toggle with keyboard shortcut**
+```html
+<script
+  src="https://unpkg.com/agent-feedback/dist/cdn.global.js"
+  data-options='{"activationKey":"Alt+t"}'
+></script>
+```
+
+**JavaScript API (CDN):**
+```javascript
+// Mount/unmount programmatically
+window.AgentFeedback.mount()
+window.AgentFeedback.unmount()
+```
+
+**Bundle size:** ~240 KB gzipped (includes React)
+
+### NPM Package
+
 ```bash
 npm install agent-feedback bippy
 # or

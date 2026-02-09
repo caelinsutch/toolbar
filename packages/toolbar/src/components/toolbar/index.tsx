@@ -63,9 +63,40 @@ function isElementFixed(element: HTMLElement): boolean {
   return false;
 }
 
-export default function Toolbar() {
-  const [isActive, setIsActive] = useState(false);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+interface ToolbarProps {
+  /** Start the toolbar in expanded state */
+  defaultExpanded?: boolean;
+}
+
+const STORAGE_KEY = 'agent-feedback-annotations';
+
+function loadAnnotations(): Annotation[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const all = JSON.parse(stored) as Record<string, Annotation[]>;
+      return all[window.location.pathname] || [];
+    }
+  } catch (e) {
+    console.warn('[AgentFeedback] Failed to load annotations:', e);
+  }
+  return [];
+}
+
+function saveAnnotations(annotations: Annotation[]) {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const all = stored ? JSON.parse(stored) : {};
+    all[window.location.pathname] = annotations;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  } catch (e) {
+    console.warn('[AgentFeedback] Failed to save annotations:', e);
+  }
+}
+
+export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
+  const [isActive, setIsActive] = useState(defaultExpanded);
+  const [annotations, setAnnotations] = useState<Annotation[]>(loadAnnotations);
   const [showMarkers, setShowMarkers] = useState(true);
   const [markersVisible, setMarkersVisible] = useState(false);
   const [markersExiting, setMarkersExiting] = useState(false);
@@ -99,6 +130,11 @@ export default function Toolbar() {
   const didDragRef = useRef(false);
   const popupRef = useRef<AnnotationPopupHandle>(null);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist annotations to localStorage
+  useEffect(() => {
+    saveAnnotations(annotations);
+  }, [annotations]);
 
   const {
     shifts,
@@ -156,6 +192,8 @@ export default function Toolbar() {
     const text = annotations
       .map((a, i) => {
         const lines = [`${i + 1}. ${a.element}`];
+        if (a.reactComponent) lines.push(`   Component: <${a.reactComponent}>`);
+        if (a.reactHierarchy?.length) lines.push(`   Hierarchy: ${a.reactHierarchy.join(' → ')}`);
         if (a.selectedText) lines.push(`   Selected: "${a.selectedText}"`);
         lines.push(`   Comment: ${a.comment}`);
         if (a.elementPath) lines.push(`   Path: ${a.elementPath}`);
@@ -416,6 +454,8 @@ export default function Toolbar() {
         nearbyText: pendingAnnotation.nearbyText,
         cssClasses: pendingAnnotation.cssClasses,
         isFixed: pendingAnnotation.isFixed,
+        reactComponent: pendingAnnotation.reactComponent,
+        reactHierarchy: pendingAnnotation.reactHierarchy,
       };
       setAnnotations((prev) => [...prev, newAnnotation]);
       setTimeout(() => {
@@ -1277,7 +1317,11 @@ export default function Toolbar() {
                   />
                 </svg>
               </button>
-              <div className={styles.buttonTooltip}>
+              <div
+                className={styles.buttonTooltip}
+                onClick={() => copyAnnotationsToClipboard()}
+                style={{ cursor: annotations.length > 0 ? 'pointer' : 'default' }}
+              >
                 Copy <Kbd keys={['alt', 'C']} />
               </div>
             </div>

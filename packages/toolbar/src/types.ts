@@ -16,6 +16,8 @@ export interface Annotation {
   nearbyText?: string;
   cssClasses?: string;
   isFixed?: boolean;
+  reactComponent?: string | null;
+  reactHierarchy?: string[];
 }
 
 export interface LayoutShiftRect {
