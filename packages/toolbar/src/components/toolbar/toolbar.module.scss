@@ -287,6 +287,17 @@ $green: #34c759;
   animation: hintIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   overflow: hidden;
   white-space: nowrap;
+  cursor: pointer !important;
+  user-select: none;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+
+  &:hover {
+    background: rgba($blue, 0.25);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 
   &.exit {
     animation: hintOut 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -412,7 +423,8 @@ $green: #34c759;
   pointer-events: none;
   z-index: 100001;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition: opacity 0.135s ease, transform 0.135s ease, visibility 0.135s ease;
+  transition: opacity 0.135s ease, transform 0.135s ease, visibility 0.135s ease, background-color 0.15s ease;
+  user-select: none;
 
   &::after {
     content: '';
@@ -424,6 +436,20 @@ $green: #34c759;
     height: 8px;
     background: #1a1a1a;
     border-radius: 0 0 2px 0;
+  }
+}
+
+.clickableTooltip {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+
+  &:hover {
+    background: #2a2a2a !important;
+  }
+
+  &:active {
+    transform: translateX(-50%) scale(0.95);
   }
 }
 
