@@ -122,7 +122,7 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
     toolbarX: number;
     toolbarY: number;
   } | null>(null);
-  const [activeMode, setActiveMode] = useState<'select' | 'cls' | 'a11y' | 'screenReader' | null>(
+  const [activeMode, setActiveMode] = useState<'select' | 'comment' | 'cls' | 'a11y' | 'screenReader' | null>(
     null
   );
   const [clsFilterThreshold, setClsFilterThreshold] = useState(0.01);
@@ -180,7 +180,9 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
   const filteredShifts = shifts.filter((shift) => shift.value >= clsFilterThreshold);
 
   // Derived states for convenience
-  const isSelecting = activeMode === 'select';
+  const isSelecting = activeMode === 'select' || activeMode === 'comment';
+  const isCommenting = activeMode === 'comment';
+  const isPicking = activeMode === 'select';
   const clsDetectionActive = activeMode === 'cls';
   const a11yAuditActive = activeMode === 'a11y';
   const screenReaderActive = activeMode === 'screenReader';
@@ -221,7 +223,7 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
       }
 
       // Use e.code for Alt shortcuts (Alt+key produces special chars on Mac)
-      // Alt+S - Toggle selector (opens toolbar if closed)
+      // Alt+S - Toggle select mode (copies element reference)
       if (e.code === 'KeyS' && e.altKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         if (!isActive) {
@@ -229,6 +231,17 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
           setActiveMode('select');
         } else {
           setActiveMode(activeMode === 'select' ? null : 'select');
+        }
+      }
+
+      // Alt+A - Toggle comment/annotate mode (opens toolbar if closed)
+      if (e.code === 'KeyA' && e.altKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        if (!isActive) {
+          setIsActive(true);
+          setActiveMode('comment');
+        } else {
+          setActiveMode(activeMode === 'comment' ? null : 'comment');
         }
       }
 
@@ -401,6 +414,22 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
       if (!elementUnder) return;
 
       const { name, path, reactComponent, reactHierarchy } = identifyElement(elementUnder);
+
+      // Select mode: copy element reference to clipboard and exit
+      if (isPicking) {
+        const lines = [name];
+        if (reactComponent) lines.push(`Component: <${reactComponent}>`);
+        if (reactHierarchy?.length) lines.push(`Hierarchy: ${reactHierarchy.join(' → ')}`);
+        if (path) lines.push(`Path: ${path}`);
+        const cssClasses = getElementClasses(elementUnder);
+        if (cssClasses) lines.push(`Classes: ${cssClasses}`);
+        navigator.clipboard.writeText(lines.join('\n'));
+        setHoverInfo(null);
+        setActiveMode(null);
+        return;
+      }
+
+      // Comment mode: open annotation popup
       const rect = elementUnder.getBoundingClientRect();
       const x = (e.clientX / window.innerWidth) * 100;
       const isFixed = isElementFixed(elementUnder);
@@ -436,7 +465,7 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
 
     document.addEventListener('click', handleClick, true);
     return () => document.removeEventListener('click', handleClick, true);
-  }, [isSelecting, pendingAnnotation]);
+  }, [isSelecting, isPicking, pendingAnnotation]);
 
   const addAnnotation = useCallback(
     (comment: string) => {
@@ -575,6 +604,10 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
 
   const toggleSelecting = () => {
     setActiveMode(activeMode === 'select' ? null : 'select');
+  };
+
+  const toggleCommenting = () => {
+    setActiveMode(activeMode === 'comment' ? null : 'comment');
   };
 
   const toggleMarkers = () => {
@@ -1068,9 +1101,9 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
                   e.stopPropagation();
                   toggleSelecting();
                 }}
-                data-active={isSelecting}
+                data-active={isPicking}
                 aria-label="Select element"
-                aria-pressed={isSelecting}
+                aria-pressed={isPicking}
               >
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path
@@ -1083,7 +1116,34 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
                 </svg>
               </button>
               <div className={styles.buttonTooltip}>
-                Select Element <Kbd keys={['alt', 'S']} />
+                Select <Kbd keys={['alt', 'S']} />
+              </div>
+            </div>
+
+            <div className={styles.buttonWrapper}>
+              <button
+                type="button"
+                className={styles.controlButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleCommenting();
+                }}
+                data-active={isCommenting}
+                aria-label="Comment on element"
+                aria-pressed={isCommenting}
+              >
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 4H16C17 4 18 5 18 6V12C18 13 17 14 16 14H12L8 18V14H4C3 14 2 13 2 12V6C2 5 3 4 4 4Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                </svg>
+              </button>
+              <div className={styles.buttonTooltip}>
+                Comment <Kbd keys={['alt', 'A']} />
               </div>
             </div>
 
@@ -1320,7 +1380,10 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
               <div
                 className={styles.buttonTooltip}
                 onClick={() => copyAnnotationsToClipboard()}
-                style={{ cursor: annotations.length > 0 ? 'pointer' : 'default' }}
+                style={{
+                  pointerEvents: annotations.length > 0 ? 'auto' : 'none',
+                  cursor: annotations.length > 0 ? 'pointer' : 'default',
+                }}
               >
                 Copy <Kbd keys={['alt', 'C']} />
               </div>
