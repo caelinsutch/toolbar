@@ -359,6 +359,9 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
         cursor: text !important;
       }
       [data-feedback-toolbar], [data-feedback-toolbar] * { cursor: default !important; }
+      [data-feedback-toolbar] button { cursor: pointer !important; }
+      [data-feedback-toolbar] button:disabled { cursor: not-allowed !important; }
+      [data-feedback-toolbar] [data-clickable] { cursor: pointer !important; }
       [data-annotation-popup], [data-annotation-popup] * { cursor: auto !important; }
       [data-annotation-popup] button { cursor: pointer !important; }
       [data-annotation-popup] button:disabled { cursor: not-allowed !important; }
@@ -1087,7 +1090,14 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
         >
           <div className={`${styles.controlsContent} ${isActive ? styles.visible : styles.hidden}`}>
             {hintVisible && (
-              <div className={`${styles.annotationHint} ${hintExiting ? styles.exit : ''}`}>
+              <div
+                className={`${styles.annotationHint} ${hintExiting ? styles.exit : ''}`}
+                data-clickable=""
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyAnnotationsToClipboard();
+                }}
+              >
                 <span className={styles.annotationCount}>{annotations.length}</span>
                 <Kbd keys={['alt', 'C']} />
               </div>
@@ -1379,6 +1389,7 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
               </button>
               <div
                 className={`${styles.buttonTooltip} ${annotations.length > 0 ? styles.clickableTooltip : ''}`}
+                data-clickable={annotations.length > 0 ? '' : undefined}
                 onClick={() => copyAnnotationsToClipboard()}
               >
                 Copy <Kbd keys={['alt', 'C']} />

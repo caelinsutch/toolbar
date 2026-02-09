@@ -287,6 +287,17 @@ $green: #34c759;
   animation: hintIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   overflow: hidden;
   white-space: nowrap;
+  cursor: pointer !important;
+  user-select: none;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+
+  &:hover {
+    background: rgba($blue, 0.25);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 
   &.exit {
     animation: hintOut 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -431,9 +442,14 @@ $green: #34c759;
 .clickableTooltip {
   pointer-events: auto !important;
   cursor: pointer !important;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 
   &:hover {
     background: #2a2a2a !important;
+  }
+
+  &:active {
+    transform: translateX(-50%) scale(0.95);
   }
 }
 
