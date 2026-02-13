@@ -1,6 +1,6 @@
 {
   "name": "agent-feedback",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A floating toolbar for AI agents to annotate, inspect, and provide feedback on web pages",
   "type": "module",
   "main": "./dist/index.js",
