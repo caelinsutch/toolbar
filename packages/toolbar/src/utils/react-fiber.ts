@@ -46,6 +46,7 @@ const NEXTJS_INTERNAL_NAMES = new Set([
   'AppDevOverlay',
   'LoadableComponent',
   'MotionDOMComponent',
+  'SegmentViewNode',
 ]);
 
 function isUsefulComponentName(name: string | null | undefined): name is string {
