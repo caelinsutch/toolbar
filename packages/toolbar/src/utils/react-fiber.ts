@@ -7,9 +7,10 @@ import {
   traverseFiber,
 } from 'bippy';
 
-const IGNORED_COMPONENT_NAMES = new Set([
+const REACT_INTERNAL_NAMES = new Set([
   'Fragment',
   'Suspense',
+  'SuspenseList',
   'StrictMode',
   'Profiler',
   'Provider',
@@ -21,11 +22,41 @@ const IGNORED_COMPONENT_NAMES = new Set([
   'Lazy',
 ]);
 
+const NEXTJS_INTERNAL_NAMES = new Set([
+  'InnerLayoutRouter',
+  'OuterLayoutRouter',
+  'RedirectErrorBoundary',
+  'RedirectBoundary',
+  'HTTPAccessFallbackErrorBoundary',
+  'HTTPAccessFallbackBoundary',
+  'DevRootHTTPAccessFallbackBoundary',
+  'LoadingBoundary',
+  'ErrorBoundary',
+  'ErrorBoundaryHandler',
+  'InnerScrollAndFocusHandler',
+  'ScrollAndFocusHandler',
+  'RenderFromTemplateContext',
+  'AppRouter',
+  'Router',
+  'HotReload',
+  'ServerRoot',
+  'SegmentStateProvider',
+  'RootErrorBoundary',
+  'AppDevOverlayErrorBoundary',
+  'AppDevOverlay',
+  'LoadableComponent',
+  'MotionDOMComponent',
+]);
+
 function isUsefulComponentName(name: string | null | undefined): name is string {
   if (!name) return false;
-  if (IGNORED_COMPONENT_NAMES.has(name)) return false;
+  if (REACT_INTERNAL_NAMES.has(name)) return false;
+  if (NEXTJS_INTERNAL_NAMES.has(name)) return false;
   if (name === 'Anonymous' || name === 'Component') return false;
   if (name.length === 1 && name === name.toLowerCase()) return false;
+  if (name.startsWith('_')) return false;
+  if (name.startsWith('Primitive.')) return false;
+  if (name === 'Slot' || name === 'SlotClone') return false;
   return true;
 }
 

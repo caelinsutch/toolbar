@@ -122,9 +122,9 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
     toolbarX: number;
     toolbarY: number;
   } | null>(null);
-  const [activeMode, setActiveMode] = useState<'select' | 'comment' | 'cls' | 'a11y' | 'screenReader' | null>(
-    null
-  );
+  const [activeMode, setActiveMode] = useState<
+    'select' | 'comment' | 'cls' | 'a11y' | 'screenReader' | null
+  >(null);
   const [clsFilterThreshold, setClsFilterThreshold] = useState(0.01);
   const [hoveredShiftId, setHoveredShiftId] = useState<string | null>(null);
   const didDragRef = useRef(false);
@@ -214,11 +214,7 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in an input/textarea
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
 
@@ -388,9 +384,17 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
         setHoverInfo(null);
         return;
       }
-      const { name, path, reactComponent, reactHierarchy, reactProps } = identifyElement(elementUnder);
+      const { name, path, reactComponent, reactHierarchy, reactProps } =
+        identifyElement(elementUnder);
       const rect = elementUnder.getBoundingClientRect();
-      setHoverInfo({ element: name, elementPath: path, rect, reactComponent, reactHierarchy, reactProps });
+      setHoverInfo({
+        element: name,
+        elementPath: path,
+        rect,
+        reactComponent,
+        reactHierarchy,
+        reactProps,
+      });
       setHoverPosition({ x: e.clientX, y: e.clientY });
     };
     document.addEventListener('mousemove', handleMouseMove);
@@ -702,13 +706,15 @@ export default function Toolbar({ defaultExpanded = false }: ToolbarProps) {
                   </div>
                   {hoverInfo.reactProps && Object.keys(hoverInfo.reactProps).length > 0 && (
                     <div className={styles.hoverTooltipProps}>
-                      {Object.entries(hoverInfo.reactProps).slice(0, 5).map(([key, value]) => (
-                        <span key={key} className={styles.propItem}>
-                          <span className={styles.propKey}>{key}</span>
-                          <span className={styles.propEquals}>=</span>
-                          <span className={styles.propValue}>{formatPropValue(value)}</span>
-                        </span>
-                      ))}
+                      {Object.entries(hoverInfo.reactProps)
+                        .slice(0, 5)
+                        .map(([key, value]) => (
+                          <span key={key} className={styles.propItem}>
+                            <span className={styles.propKey}>{key}</span>
+                            <span className={styles.propEquals}>=</span>
+                            <span className={styles.propValue}>{formatPropValue(value)}</span>
+                          </span>
+                        ))}
                       {Object.keys(hoverInfo.reactProps).length > 5 && (
                         <span className={styles.propMore}>
                           +{Object.keys(hoverInfo.reactProps).length - 5} more
