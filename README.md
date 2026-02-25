@@ -1,81 +1,103 @@
-# cloudflare-toolbar
+# agent-feedback
 
-A floating developer toolbar for web debugging - accessibility audits, layout shift detection, screen reader preview, and element annotation.
+A floating toolbar for AI agents to annotate, inspect, and provide feedback on web pages. Features element selection, accessibility audits, layout shift detection, screen reader preview, React component detection, and animation controls.
 
-## Installation
+## Quick Start (CDN)
 
-```bash
-npm install cloudflare-toolbar
-# or
-bun add cloudflare-toolbar
+Add a single script tag to any HTML page. No build step, no dependencies:
+
+```html
+<script src="https://unpkg.com/agent-feedback/dist/cdn.global.js"></script>
 ```
 
-## Usage
+Or via jsDelivr:
 
-Import and render the `Toolbar` component anywhere in your React application:
+```html
+<script src="https://cdn.jsdelivr.net/npm/agent-feedback/dist/cdn.global.js"></script>
+```
+
+That's it. The toolbar auto-mounts in the bottom-right corner with all styles isolated from your page.
+
+### Options
+
+Pass configuration via `data-options`:
+
+```html
+<script
+  src="https://unpkg.com/agent-feedback/dist/cdn.global.js"
+  data-options='{"activationKey":"Alt+t"}'
+></script>
+```
+
+### JavaScript API
+
+```javascript
+window.AgentFeedback.mount()
+window.AgentFeedback.unmount()
+```
+
+## NPM Install
+
+```bash
+npm install agent-feedback bippy
+```
+
+`bippy` must be imported **before** React for component detection to work.
 
 ```tsx
-import { Toolbar } from 'cloudflare-toolbar'
+// src/main.tsx
+import 'bippy'  // Must be first
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { Toolbar } from 'agent-feedback'
 
-function App() {
+createRoot(document.getElementById('root')!).render(
+  <>
+    <App />
+    <Toolbar />
+  </>
+)
+```
+
+### Next.js 15.3+
+
+```ts
+// instrumentation-client.ts
+import 'bippy'
+```
+
+```tsx
+// app/layout.tsx
+import { Toolbar } from 'agent-feedback'
+
+export default function RootLayout({ children }) {
   return (
-    <div>
-      <h1>My Application</h1>
-      {/* Your app content */}
-      
-      {/* Add the toolbar - it will float in the corner */}
-      <Toolbar />
-    </div>
+    <html>
+      <body>
+        {children}
+        <Toolbar />
+      </body>
+    </html>
   )
 }
 ```
 
-The toolbar appears as a floating button in the bottom-right corner. Click to expand and access all features.
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Option+S` | Open toolbar & activate element selector |
+| `Option+C` | Copy all annotations to clipboard |
+| `Escape` | Close current panel or collapse toolbar |
 
 ## Features
 
-- **Element Selection & Annotation** - Click elements to add comments and annotations
-- **Accessibility Audits** - Built-in axe-core integration for WCAG testing
-- **Layout Shift Detection (CLS)** - Real-time Cumulative Layout Shift monitoring
-- **Screen Reader Preview** - See how screen readers announce your content
-- **Animation Controls** - Pause/resume CSS animations for debugging
-
-## Development
-
-This is a Turborepo monorepo.
-
-### Prerequisites
-
-- [Bun](https://bun.sh/)
-
-### Setup
-
-```bash
-bun install
-```
-
-### Commands
-
-```bash
-bun run dev        # Start development servers
-bun run build      # Build all packages
-bun run typecheck  # Run type checking
-bun run lint       # Lint all packages
-```
-
-### Structure
-
-```
-├── apps/
-│   └── web/              # Demo app (Vite + React)
-└── packages/
-    ├── toolbar/          # Main library (cloudflare-toolbar)
-    └── types/            # Shared TypeScript types
-```
-
-## Requirements
-
-- React 18+
+- **Element Selection & Annotation** - Click elements to add comments. Copy all annotations for sharing.
+- **React Component Detection** - Shows component name and hierarchy on hover (e.g., `<Button> in NavBar -> Header`).
+- **Accessibility Audits** - Built-in axe-core WCAG testing.
+- **Layout Shift Detection** - Real-time CLS monitoring.
+- **Screen Reader Preview** - See how screen readers announce your content.
+- **Animation Controls** - Pause/resume CSS animations.
 
 ## License
 
